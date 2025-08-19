@@ -6,315 +6,421 @@
 <title>Live Tutoring Board</title>
 <style>
   body {
-    font-family: "Segoe UI", sans-serif;
-    background-color: #f4f6f8;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-height: 100vh;
-  }
+  font-family: "Inter", "Segoe UI", sans-serif;
+  background: linear-gradient(135deg, #f0f4f8, #e9f5ec);
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  color: #2c3e50;
+}
 
-  header {
-    background-color: #0f3e1f;
-    color: white;
-    padding: 1rem 2rem;
-    width: 100%;
-    text-align: center;
-    font-size: 1.5rem;
-    position: relative;
-  }
+/* HEADER */
+header {
+  background: linear-gradient(90deg, #0f3e1f, #1a5c31);
+  color: white;
+  padding: 1.2rem 2rem;
+  width: 100%;
+  text-align: center;
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
 
-  .header-buttons {
-    position: absolute;
-    right: 2.5rem;
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    gap: 0.5rem;
-  }
+/* Header buttons */
+.header-buttons button {
+  transition: background 0.25s, transform 0.15s;
+}
+.login-button {
+  background: white;
+  border: none;
+  cursor: pointer;
+  color: #0f3e1f;
+  font-size: 1rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  font-weight: 600;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+}
+.login-button:hover {
+  background: #e8f5e9;
+  transform: translateY(-2px);
+}
 
-  .login-button {
-    background: white;
-    border: none;
-    cursor: pointer;
-    color: #0f3e1f;
-    font-size: 1rem;
-    padding: 0.4rem 0.7rem;
-    border-radius: 5px;
-    user-select: none;
-  }
+.logout-button {
+  background: #f44336;
+  border: none;
+  cursor: pointer;
+  color: white;
+  font-size: 1rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  font-weight: 600;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+}
+.logout-button:hover {
+  background: #c62828;
+  transform: translateY(-2px);
+}
 
-  .login-button:hover {
-    background: #e8f5e9;
-  }
+/* MAIN */
+main {
+  flex: 1;
+  width: 100%;
+  max-width: 1000px;
+  padding: 2rem 1rem;
+  box-sizing: border-box;
+}
+h2 {
+  font-size: 1.6rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid #d1e7dd;
+  padding-bottom: 0.5rem;
+  color: #1b4332;
+}
 
-  .logout-button {
-    background: #f44336;
-    border: none;
-    cursor: pointer;
-    color: white;
-    font-size: 1rem;
-    padding: 0.4rem 0.7rem;
-    border-radius: 5px;
-    user-select: none;
-  }
-  .logout-button:hover {
-    background: #b71c1c;
-  }
+/* GRID */
+/* GRID */
+#tutorGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr); /* 5 cards per row */
+  gap: 1rem; /* space between cards */
+  margin-top: 1rem;
+}
 
-  main {
-    flex: 1;
-    width: 100%;
-    max-width: 900px;
-    padding: 1rem;
-    box-sizing: border-box;
-  }
+/* TUTOR CARD */
+.tutor-card {
+  position: relative;
+  cursor: pointer;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.1);
+  background: white;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  height: 200px; /* taller relative to width */
+  display: flex;
+  flex-direction: column;
+}
 
-  section {
-    margin-top: 1.5rem;
-  }
+/* Card image */
+.tutor-card img {
+  width: 100%;
+  height: 70%;
+  object-fit: cover;
+  object-position: 50% 05%; /* move down and slightly zoom */
+  transform: scale(1.09);   /* subtle zoom */
+  transition: transform 0.3s ease;
+}
 
-  #tutorGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 1rem;
-    margin-top: 1rem;
-  }
 
-  .tutor-card {
-    position: relative;
-    cursor: pointer;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 8px rgb(0 0 0 / 0.1);
-    background: white;
-    transition: transform 0.2s ease;
-  }
+/* Info section */
+.tutor-info {
+  padding: 0.5rem 0.7rem;
+  text-align: center;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #2c3e50;
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-  .tutor-card.available {
-    border: 4px solid #4caf50;
-  }
+.tutor-card.available {
+  border: 3px solid #4caf50;
+}
+.tutor-card.unavailable {
+  opacity: 0.65;
+}
+.tutor-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 10px 18px rgba(0,0,0,0.15);
+}
+.tutor-status {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #4caf50;
+  color: white;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: bold;
+  border-radius: 20px;
+  user-select: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+.tutor-card.unavailable .tutor-status {
+  background: #aaa;
+}
 
-  .tutor-card.unavailable {
-    opacity: 0.6;
-  }
+/* MODALS */
+.modal, #tutorModal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.55);
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.25s ease forwards;
+}
+.modal-content, #tutorModalContent {
+  background: white;
+  border-radius: 14px;
+  padding: 1.5rem 2rem;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  animation: slideUp 0.3s ease forwards;
+}
+.modal-content h3, #tutorModalContent h2, #adminContent h2 {
+  margin-top: 0;
+  color: #1b4332;
+}
+/* Tutor Modal Image & Scroll Fix */
+#tutorModalContent {
+  max-height: 80vh;       /* limits modal height */
+  overflow-y: auto;       /* allows scrolling if content too tall */
+  text-align: center;
+  position: relative;
+}
 
-  .tutor-card:hover {
-    transform: scale(1.05);
-  }
+#tutorModalContent img {
+  width: 100%;
+  height: auto;
+  max-height: 500px;      /* limits image size */
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  object-fit: cover;
+  object-position: 50% 30%; /* keeps face nicely framed */
+}
+#closeTutorModal {
+  position: absolute;
+  top: 12px;
+  right: 15px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f44336;
+  color: white;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 32px;
+  text-align: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: background 0.2s ease;
+}
 
-  .tutor-card img {
-    width: 100%;
-    height: 140px;
-    object-fit: cover;
-    display: block;
-  }
+#closeTutorModal:hover {
+  background: #b71c1c;
+}
 
-  .tutor-info {
-    padding: 0.5rem;
-    text-align: center;
-    font-weight: 600;
-    font-size: 1.1rem;
-    color: #333;
-  }
+.modal-content button, #adminContent button {
+  transition: background 0.25s, transform 0.15s;
+}
+button.close {
+  font-size: 2rem;
+  color: #f44336;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+button.close:hover {
+  color: #c62828;
+  transform: scale(1.1);
+}
+/* ================== ADMIN MODAL ================== */
+#adminModal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 3000;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.25s ease forwards;
+}
 
-  .tutor-status {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background: #4caf50;
-    color: white;
-    padding: 0.2rem 0.6rem;
-    font-size: 0.85rem;
-    font-weight: bold;
-    border-radius: 8px;
-    user-select: none;
-  }
+/* Admin Modal Card */
+#adminContent {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 2rem 2.5rem;
+  width: 95%;
+  max-width: 600px;
+  box-shadow: 0 12px 24px rgba(0,0,0,0.15), 0 4px 8px rgba(0,0,0,0.08);
+  position: relative;
+  animation: slideUp 0.3s ease forwards;
+  text-align: center;
+  font-family: "Inter", sans-serif;
+  color: #2c3e50;
+}
 
-  .tutor-card.unavailable .tutor-status {
-    background: #999;
-  }
+/* Admin Logout Button - top right, red, clear */
+#adminLogoutBtn.admin-logout-clear {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: #f44336;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  z-index: 10;
+  transition: background 0.2s ease;
+}
+#adminLogoutBtn.admin-logout-clear:hover {
+  background: #b71c1c;
+}
 
-  /* Admin Modal */
-  #adminModal {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.6);
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
+/* Headings */
+#adminContent h2, #adminContent h3 {
+  color: #1b4332;
+  margin-bottom: 1.5rem;
+}
 
-  #adminContent {
-    background: white;
-    border-radius: 10px;
-    padding: 1rem 2rem;
-    max-width: 600px;
-    max-height: 80vh;
-    overflow-y: auto;
-    box-sizing: border-box;
-    position: relative;
-  }
+/* Inputs */
+#adminContent input {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  margin-bottom: 1.2rem;
+  border: 1px solid #0f3e1f;
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
 
-  #adminContent h2 {
-    margin-top: 0;
-  }
+#adminContent input:focus {
+  border-color: #0f3e1f;
+  box-shadow: 0 0 8px rgba(15, 62, 31, 0.25);
+  outline: none;
+}
 
-  #adminCloseBtn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: transparent;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-  }
+/* Tutor List Container */
+#adminTutorList {
+  max-height: 320px;
+  overflow-y: auto;
+  margin-bottom: 1.5rem;
+  padding-right: 6px;
+}
 
-  #adminLogoutBtn {
-    position: absolute;
-    top: 20px;
-    right: 30px;
-    background: #f44336;
-    border: none;
-    color: white;
-    padding: 0.2rem 0.5rem;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-  #adminLogoutBtn:hover {
-    background: #b71c1c;
-  }
+/* Individual Tutor Cards */
+.admin-tutor {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.8rem;
+  background: #f7f9fc;
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  border: 1px solid #0f3e1f;
+  box-shadow: 0 2px 6px rgba(15, 62, 31, 0.05);
+  transition: all 0.2s ease;
+}
 
-  #adminTutorList {
-    margin-top: 2rem;
-  }
+.admin-tutor:hover {
+  background: #e6f4ea;
+  box-shadow: 0 6px 16px rgba(15, 62, 31, 0.15);
+}
 
-  .admin-tutor {
-    display: flex;
-    align-items: center;
-    margin-bottom: 0.75rem;
-    gap: 1rem;
-  }
+/* Tutor Avatar */
+.admin-tutor img {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #0f3e1f;
+}
 
-  .admin-tutor img {
-    width: 50px;
-    height: 50px;
-    object-fit: cover;
-    border-radius: 6px;
-  }
+/* Tutor Name */
+.admin-tutor-name {
+  flex: 1;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #1b4332;
+}
+/* Add this to your CSS */
+.admin-btn {
+  background: white;
+  border: none;
+  cursor: pointer;
+  color: #0f3e1f;
+  font-size: 1rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  font-weight: 600;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+  transition: background 0.25s, transform 0.15s, color 0.25s;
+}
 
-  .admin-tutor-name {
-    flex-grow: 1;
-  }
+.admin-btn:hover {
+  background: #e8f5e9;
+  transform: translateY(-2px);
+}
+/* Admin modal buttons like login-button */
+#adminContent button,
+#adminContent .admin-btn,
+#adminContent .admin-logout {
+  background: white;
+  border: none;
+  cursor: pointer;
+  color: #0f3e1f;
+  font-size: 1rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  font-weight: 600;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+  transition: background 0.25s, transform 0.15s, color 0.25s;
+}
 
-  .admin-btn {
-    background-color: #2196f3;
-    border: none;
-    color: white;
-    padding: 0.3rem 0.6rem;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-  .admin-btn:hover {
-    background-color: #1565c0;
-  }
+#adminContent button:hover,
+#adminContent .admin-btn:hover,
+#adminContent .admin-logout:hover {
+  background: #e8f5e9;
+  transform: translateY(-2px);
+}
 
-  .admin-btn.delete {
-    background-color: #f44336;
-  }
-  .admin-btn.delete:hover {
-    background-color: #b71c1c;
-  }
 
-  #addTutorForm {
-    margin-top: 1.5rem;
-    border-top: 1px solid #ddd;
-    padding-top: 1rem;
-  }
+/* Ensure X close button is hidden */
+#adminContent button.close {
+  display: none !important;
+}
 
-  #addTutorForm input {
-    margin-right: 0.5rem;
-    flex: 1 1 150px;
-  }
 
-  /* Tutor Info Modal */
-  #tutorModal {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 2000;
-    justify-content: center;
-    align-items: center;
-  }
 
-  #tutorModalContent {
-    background: white;
-    border-radius: 10px;
-    padding: 1.5rem;
-    max-width: 400px;
-    width: 90%;
-    text-align: center;
-    position: relative;
-  }
+/* ANIMATIONS */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
 
-  #tutorModalContent img {
-    width: 100%;
-    border-radius: 10px;
-    margin-bottom: 1rem;
-  }
-
-  #closeTutorModal {
-    position: absolute;
-    top: 20px;
-    right: 30px;
-    background: none;
-    border: none;
-    font-size: 2.9rem;
-    cursor: pointer;
-    color: #f44336;
-  }
-  #closeTutorModal:hover {
-    color: #b71c1c;
-  }
-
-  /* Login Modals */
-  .modal {
-    display:none;
-    position: fixed;
-    top:0; left:0; right:0; bottom:0;
-    background: rgba(0,0,0,0.5);
-    z-index:3000;
-    justify-content:center;
-    align-items:center;
-  }
-
-  .modal-content {
-    background:white;
-    padding:1.5rem;
-    border-radius:10px;
-    width:90%;
-    max-width:400px;
-    text-align:center;
-    position:relative;
-  }
-
-  .modal-content button.close {
-    position:absolute;
-    top:10px;
-    right:20px;
-    font-size:2rem;
-    background:none;
-    border:none;
-    cursor:pointer;
-    color:#f44336;
-  }
-  .modal-content button.close:hover {
-    color:#b71c1c;
-  }
+/* Add Tutor Form Compact Layout */
+.add-tutor-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.2rem;
+}
+.add-tutor-row input {
+  flex: 1;
+  min-width: 0;
+}
+#newTutorSubjects {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 0.2rem;
+}
 </style>
 </head>
 <body>
@@ -337,19 +443,25 @@
 <!-- Admin Modal -->
 <div id="adminModal" class="modal">
   <div id="adminContent">
-    <button id="adminCloseBtn" title="Close admin panel">&times;</button>
-    <button id="adminLogoutBtn" title="Logout Admin">Logout Admin</button>
+  <button id="adminLogoutBtn" class="admin-logout-clear" title="Logout Admin">Log Out</button>
     <h2>Admin Panel</h2>
 
+  <input id="adminTutorSearch" type="text" placeholder="Search tutors by name..." style="width:100%;margin-bottom:0.7rem;padding:0.5rem 0.7rem;font-size:1rem;border-radius:7px;border:1px solid #ccc;" />
     <div id="adminTutorList"></div>
 
     <form id="addTutorForm">
-      <h3>Add New Tutor</h3>
-      <input id="newTutorName" placeholder="Name" required />
-      <input id="newTutorId" placeholder="Student ID" required />
-      <input id="newTutorPhoto" placeholder="Photo filename (e.g. alice.jpg)" required />
-      <button type="submit">Add Tutor</button>
-    </form>
+  <h3>Add New Tutor</h3>
+  <div class="add-tutor-row">
+    <input id="newTutorName" placeholder="Name" required />
+    <input id="newTutorId" placeholder="Student ID" required />
+  </div>
+  <div class="add-tutor-row">
+    <input id="newTutorPhoto" placeholder="Photo filename (e.g. alice.jpg)" required />
+    <input id="newTutorGrade" placeholder="Grade (e.g. 11)" required />
+  </div>
+  <input id="newTutorSubjects" class="add-tutor-row" placeholder="Subjects (comma separated)" required />
+  <button type="submit">Add Tutor</button>
+</form>
   </div>
 </div>
 
@@ -364,18 +476,189 @@
   </div>
 </div>
 
+
 <!-- Tutor Login Modal -->
 <div id="tutorLoginModal" class="modal">
   <div class="modal-content">
     <button class="close" onclick="closeTutorLoginModal()">&times;</button>
     <h3>Enter Student ID</h3>
     <form id="loginForm">
-      <input id="studentId" placeholder="Student ID" required style="padding:0.5rem; font-size:1rem; width:100%; margin-bottom:1rem; border:1px solid #ccc; border-radius:5px;" />
-      <button type="submit" style="padding:0.5rem 1rem; background:#1e88e5; color:white; border:none; border-radius:5px; cursor:pointer;">Log In</button>
+      <input id="studentId" placeholder="Student ID" required />
+      <button type="submit">Log In</button>
     </form>
-    <button id="logoutButton" style="display:none; margin-top:1rem; padding:0.5rem 1rem; background:#f44336; color:white; border:none; border-radius:5px; cursor:pointer;">Log Out</button>
+    <button id="logoutButton">Log Out</button>
   </div>
 </div>
+
+<style>
+/* Tutor Edit Modal (overlays admin window) */
+#editTutorModal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.65);
+  z-index: 4000;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.25s ease forwards;
+}
+
+#editTutorModal .modal-content {
+  background: #fff;
+  padding: 32px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  min-width: 320px;
+  max-width: 400px;
+  margin: auto;
+  position: relative;
+}
+
+/* Tutor Login Modal */
+#tutorLoginModal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 3000;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.25s ease forwards;
+}
+
+#tutorLoginModal .modal-content {
+  background: linear-gradient(135deg, #ffffff, #f0f4f8); /* subtle background gradient */
+  border-radius: 14px;
+  padding: 2rem 2.5rem;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  position: relative;
+  animation: slideUp 0.3s ease forwards;
+  text-align: center;
+}
+
+#tutorLoginModal h3 {
+  margin-bottom: 1.5rem;
+  color: #1b4332;
+  font-size: 1.4rem;
+}
+
+#tutorLoginModal input {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  margin-bottom: 1.2rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#tutorLoginModal input:focus {
+  border-color: #1b4332;
+  box-shadow: 0 0 5px rgba(27, 67, 50, 0.4);
+  outline: none;
+}
+
+/* 3D-style Submit Button */
+#tutorLoginModal form button[type="submit"] {
+  padding: 0.55rem 1.2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: linear-gradient(145deg, #1e88e5, #1565c0);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.15), 0 2px 4px rgba(255,255,255,0.1);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.25s ease;
+}
+
+#tutorLoginModal form button[type="submit"]:hover {
+  background: linear-gradient(145deg, #1565c0, #1e88e5);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(0,0,0,0.2), 0 3px 6px rgba(255,255,255,0.1);
+}
+
+/* Logout Button */
+#tutorLoginModal #logoutButton {
+  display: none;
+  margin-top: 1rem;
+  padding: 0.55rem 1.2rem;
+  font-weight: 600;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  color: white;
+  background: #f44336;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.15), 0 2px 4px rgba(255,255,255,0.1);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.25s ease;
+}
+
+#tutorLoginModal #logoutButton:hover {
+  background: #b71c1c;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(0,0,0,0.2), 0 3px 6px rgba(255,255,255,0.1);
+}
+
+/* Close Button */
+#tutorLoginModal .close {
+  position: absolute;
+  top: 12px;
+  right: 15px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f44336;
+  color: white;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+#tutorLoginModal .close:hover {
+  background: #b71c1c;
+}
+</style>
+
+<!-- Edit Tutor Modal -->
+<!-- (Removed duplicate modal definition) -->
+
+<style>
+  #editTutorModal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.55);
+  justify-content: center;
+  align-items: center;
+}
+
+#editTutorContent {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  animation: slideUp 0.3s ease forwards;
+  text-align: center;
+}
+
+#editTutorContent input {
+  width: 100%;
+  padding: 0.45rem 0.9rem;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+</style>
+
+
 
 <!-- Admin Password Modal -->
 <div id="passwordModal" class="modal">
@@ -383,11 +666,124 @@
     <button class="close" onclick="closePasswordModal()">&times;</button>
     <h3>Enter Admin Password</h3>
     <form id="adminPasswordForm">
-      <input id="adminPasswordInput" type="password" placeholder="Password" style="padding:0.5rem; font-size:1rem; width:100%; margin-bottom:1rem; border:1px solid #ccc; border-radius:5px;" required />
+      <input id="adminPasswordInput" type="password" placeholder="Password" required />
       <button type="submit">Log In</button>
     </form>
   </div>
 </div>
+<!-- Edit Tutor Modal -->
+<div id="editTutorModal" class="modal">
+  <div class="modal-content" id="editTutorContent">
+    <h2>Edit Tutor</h2>
+    <div class="add-tutor-row">
+      <input type="text" id="editTutorName" placeholder="Name" />
+      <input type="text" id="editTutorGrade" placeholder="Grade" />
+    </div>
+    <div class="add-tutor-row">
+      <input type="text" id="editTutorId" placeholder="Student ID" />
+      <input type="text" id="editTutorPhoto" placeholder="Photo filename (e.g. alice.jpg)" />
+      <img id="editTutorPreview" src="" alt="Tutor Photo Preview" style="width:48px; height:48px; border-radius:50%; object-fit:cover; margin-left:0.5rem;" />
+    </div>
+  <textarea id="editTutorSubjects" class="add-tutor-row" placeholder="Subjects (comma separated)" style="height:5em;width:90%;resize:vertical;font-size:1.05rem;padding:0.7rem 1rem;"></textarea>
+    <div class="add-tutor-row" style="justify-content: flex-end;">
+    </div>
+    <div style="display: flex; justify-content: center; gap: 0.7rem; margin-top: 1.2rem;">
+      <button id="cancelTutorBtn" class="admin-btn" type="button">Cancel</button>
+      <button id="saveTutorBtn" class="admin-btn">Save</button>
+    </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* Admin Password Modal styled like Tutor Login Modal */
+#passwordModal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 3000;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.25s ease forwards;
+}
+
+#passwordModal .modal-content {
+  background: linear-gradient(135deg, #ffffff, #f0f4f8); /* subtle gradient */
+  border-radius: 14px;
+  padding: 2rem 2.5rem;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  position: relative;
+  animation: slideUp 0.3s ease forwards;
+  text-align: center;
+}
+
+#passwordModal h3 {
+  margin-bottom: 1.5rem;
+  color: #1b4332;
+  font-size: 1.4rem;
+}
+
+#passwordModal input {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  margin-bottom: 1.2rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#passwordModal input:focus {
+  border-color: #1b4332;
+  box-shadow: 0 0 5px rgba(27, 67, 50, 0.4);
+  outline: none;
+}
+
+#passwordModal form button[type="submit"] {
+  padding: 0.55rem 1.2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: linear-gradient(145deg, #1e88e5, #1565c0);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.15), 0 2px 4px rgba(255,255,255,0.1);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.25s ease;
+}
+
+#passwordModal form button[type="submit"]:hover {
+  background: linear-gradient(145deg, #1565c0, #1e88e5);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(0,0,0,0.2), 0 3px 6px rgba(255,255,255,0.1);
+}
+
+/* Close Button */
+#passwordModal .close {
+  position: absolute;
+  top: 12px;
+  right: 15px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f44336;
+  color: white;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+#passwordModal .close:hover {
+  background: #b71c1c;
+}
+</style>
+
 
 <script>
   const tutorGrid = document.getElementById('tutorGrid');
@@ -397,13 +793,14 @@
 
   const settingsBtn = document.getElementById('settingsBtn');
   const adminModal = document.getElementById('adminModal');
-  const adminCloseBtn = document.getElementById('adminCloseBtn');
   const adminLogoutBtn = document.getElementById('adminLogoutBtn');
   const adminTutorList = document.getElementById('adminTutorList');
   const addTutorForm = document.getElementById('addTutorForm');
   const newTutorName = document.getElementById('newTutorName');
   const newTutorId = document.getElementById('newTutorId');
   const newTutorPhoto = document.getElementById('newTutorPhoto');
+  const newTutorGrade = document.getElementById('newTutorGrade');
+  const newTutorSubjects = document.getElementById('newTutorSubjects');
 
   const tutorModal = document.getElementById('tutorModal');
   const closeTutorModal = document.getElementById('closeTutorModal');
@@ -416,6 +813,7 @@
 
   let loggedInId = null;
   let adminLoggedIn = false;
+  let allAdminTutors = [];
 
   // Reset tutor login modal UI (show login form, hide logout button, clear input)
   function resetTutorLoginModalUI() {
@@ -468,11 +866,6 @@
     });
   }
 
-  // Tutor login button opens login modal
-  headerButtons.querySelector('#tutorLoginBtn')?.addEventListener('click', () => {
-    tutorLoginModal.style.display = 'flex';
-    resetTutorLoginModalUI();
-  });
 
   function closeTutorLoginModal() {
     tutorLoginModal.style.display = 'none';
@@ -566,16 +959,6 @@
     }
   });
 
-  settingsBtn.addEventListener('click', () => {
-    if(adminLoggedIn) {
-      adminModal.style.display = 'flex';
-    } else {
-      document.getElementById('passwordModal').style.display = 'flex';
-      document.getElementById('adminPasswordInput').value = '';
-      document.getElementById('adminPasswordInput').focus();
-    }
-  });
-
   function closePasswordModal() {
     document.getElementById('passwordModal').style.display = 'none';
   }
@@ -605,27 +988,39 @@
     }
   });
 
-  adminCloseBtn.addEventListener('click', () => {
-    adminModal.style.display = 'none';
-  });
 
   adminLogoutBtn.addEventListener('click', () => {
     adminLoggedIn = false;
     adminModal.style.display = 'none';
-    alert('Exited admin mode. To reopen, you’ll need the password.');
   });
 
   function renderAdminTutorList(tutors) {
-    adminTutorList.innerHTML = tutors.map(tutor => `
+    allAdminTutors = tutors;
+    updateAdminTutorList();
+  }
+
+  function updateAdminTutorList() {
+    const searchValue = document.getElementById('adminTutorSearch').value.trim().toLowerCase();
+    const filteredTutors = allAdminTutors.filter(tutor => tutor.name.toLowerCase().includes(searchValue));
+    adminTutorList.innerHTML = filteredTutors.map(tutor => `
       <div class="admin-tutor">
         <img src="photos/${tutor.photo}" alt="${tutor.name}" />
         <div class="admin-tutor-name">${tutor.name} (${tutor.id})</div>
+        <button class="admin-btn edit" data-id="${tutor.id}">Edit</button>
         <button class="admin-btn toggle-availability" data-id="${tutor.id}">
           ${tutor.available ? 'Set Unavailable' : 'Set Available'}
         </button>
         <button class="admin-btn delete" data-id="${tutor.id}">Delete</button>
       </div>
     `).join('');
+
+    document.querySelectorAll('.edit').forEach(btn => {
+      btn.onclick = () => {
+        const id = btn.dataset.id;
+        const tutor = allAdminTutors.find(t => t.id == id);
+        openEditTutor(tutor);
+      };
+    });
 
     document.querySelectorAll('.toggle-availability').forEach(btn => {
       btn.onclick = async () => {
@@ -661,22 +1056,28 @@
     });
   }
 
+  document.getElementById('adminTutorSearch').addEventListener('input', updateAdminTutorList);
+
   addTutorForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = newTutorName.value.trim();
     const id = newTutorId.value.trim();
     const photo = newTutorPhoto.value.trim();
+    const grade = newTutorGrade.value.trim();
+    const subjects = newTutorSubjects.value.split(',').map(s => s.trim()).filter(Boolean);
 
     const res = await fetch('/api/add-tutor', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, id, photo })
+      body: JSON.stringify({ name, id, photo, grade, subjects })
     });
 
     if(res.ok) {
       newTutorName.value = '';
       newTutorId.value = '';
       newTutorPhoto.value = '';
+      newTutorGrade.value = '';
+      newTutorSubjects.value = '';
       fetchTutors();
     } else {
       alert('Failed to add tutor');
@@ -693,6 +1094,78 @@
   fetchTutors();
   setInterval(fetchTutors, 5000);
 </script>
+<script>
+const editModal = document.getElementById("editTutorModal");
+const editName = document.getElementById("editTutorName");
+const editGrade = document.getElementById("editTutorGrade");
+const editSubjects = document.getElementById("editTutorSubjects");
+const editPhoto = document.getElementById("editTutorPhoto");
+const editPreview = document.getElementById("editTutorPreview");
+const saveBtn = document.getElementById("saveTutorBtn");
+const cancelBtn = document.getElementById("cancelTutorBtn");
 
+let currentEditingTutor = null;
+let currentEditingOriginalId = null;
+
+// Open edit modal with tutor info
+function openEditTutor(tutor) {
+  currentEditingTutor = tutor;
+  currentEditingOriginalId = tutor.id;
+  document.getElementById('editTutorName').value = tutor.name || "";
+  document.getElementById('editTutorGrade').value = tutor.grade || "";
+  document.getElementById('editTutorId').value = tutor.id || "";
+  document.getElementById('editTutorPhoto').value = tutor.photo || "";
+  document.getElementById('editTutorSubjects').value = Array.isArray(tutor.subjects) ? tutor.subjects.join(", ") : "";
+  document.getElementById('editTutorPreview').src = tutor.photo ? `photos/${tutor.photo}` : "";
+  editModal.style.display = "flex";
+}
+
+// Update preview when a new photo is selected
+editPhoto.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      editPreview.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+// Save changes (send to backend)
+saveBtn.addEventListener("click", async () => {
+  if (!currentEditingTutor) return;
+  const id = document.getElementById('editTutorId').value;
+  const name = document.getElementById('editTutorName').value;
+  const grade = document.getElementById('editTutorGrade').value;
+  const subjects = document.getElementById('editTutorSubjects').value.split(",").map(s => s.trim()).filter(Boolean);
+  const photo = document.getElementById('editTutorPhoto').value;
+  const originalId = currentEditingOriginalId;
+
+  const res = await fetch('/api/edit-tutor', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, name, grade, subjects, photo, originalId })
+  });
+  if (res.ok) {
+    editModal.style.display = "none";
+    fetchTutors();
+  } else {
+    const data = await res.json();
+    alert(data.message || 'Failed to update tutor');
+  }
+});
+
+// Cancel button closes modal
+cancelBtn.addEventListener("click", () => {
+  editModal.style.display = "none";
+});
+
+// Close modal when clicking outside content
+editModal.addEventListener("click", (e) => {
+  if (e.target === editModal) editModal.style.display = "none";
+});
+
+</script>
 </body>
 </html>

@@ -4,7 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const app = express();
 
-const AdminPassword = process.env.ADMIN_PASSWORD;
+// const AdminPassword = process.env.ADMIN_PASSWORD;
+const AdminPassword = "a";
 
 const DATA_PATH = path.join(__dirname, 'data', 'tutors.json');
 const PHOTO_DIR = path.join(__dirname, '..', 'frontend', 'photos');
@@ -160,7 +161,7 @@ app.post('/api/delete-tutor', (req, res) => {
 
 // Admin: add tutor
 app.post('/api/add-tutor', (req, res) => {
-  const { name, id, photo } = req.body;
+  const { name, id, photo, grade, subjects } = req.body;
   if (!name || !id || !photo) {
     return res.status(400).json({ message: 'Missing fields' });
   }
@@ -170,9 +171,36 @@ app.post('/api/add-tutor', (req, res) => {
     return res.status(409).json({ message: 'Tutor with this ID already exists' });
   }
 
-  tutors.push({ name, id, photo, available: false });
+  tutors.push({ name, id, photo, grade, subjects, available: false });
   saveTutors(tutors);
   res.json({ message: 'Tutor added' });
+});
+
+// Admin: edit tutor
+app.post('/api/edit-tutor', (req, res) => {
+  const { id, name, grade, subjects, photo, originalId } = req.body;
+  let tutors = loadTutors();
+  // Try to find by originalId first
+  let index = tutors.findIndex(t => t.id === originalId);
+  // If not found, try by name (case-insensitive)
+  if (index === -1 && name) {
+    index = tutors.findIndex(t => t.name.trim().toLowerCase() === name.trim().toLowerCase());
+  }
+  if (index === -1) return res.status(404).json({ message: 'Tutor not found' });
+  // If changing ID, check for conflicts
+  if (id !== undefined && id !== tutors[index].id) {
+    if (tutors.some(t => t.id === id)) {
+      return res.status(409).json({ message: 'Tutor with this ID already exists' });
+    }
+    tutors[index].id = id;
+  }
+  if (name !== undefined) tutors[index].name = name;
+  if (grade !== undefined) tutors[index].grade = grade;
+  if (subjects !== undefined) tutors[index].subjects = subjects;
+  if (photo !== undefined) tutors[index].photo = photo;
+
+  saveTutors(tutors);
+  res.json({ message: 'Tutor updated', tutor: tutors[index] });
 });
 
 // ---------------------------
@@ -192,6 +220,7 @@ app.post('/api/admin-login', (req, res) => {
     res.json({ success: false });
   }
 });
+
 
 // ---------------------------
 // Start Server
