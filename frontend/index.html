@@ -87,9 +87,11 @@ h2 {
 /* GRID */
 #tutorGrid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr); /* 5 cards per row */
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 1rem; /* space between cards */
   margin-top: 1rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* TUTOR CARD */
