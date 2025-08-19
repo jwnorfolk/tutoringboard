@@ -4,8 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const app = express();
 
-// const AdminPassword = process.env.ADMIN_PASSWORD;
-const AdminPassword = "a";
+const AdminPassword = process.env.ADMIN_PASSWORD;
 
 const DATA_PATH = path.join(__dirname, 'data', 'tutors.json');
 const PHOTO_DIR = path.join(__dirname, '..', 'frontend', 'photos');
