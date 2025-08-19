@@ -4,6 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const app = express();
 
+const AdminPassword = process.env.ADMIN_PASSWORD;
+
 const DATA_PATH = path.join(__dirname, 'data', 'tutors.json');
 const PHOTO_DIR = path.join(__dirname, '..', 'frontend', 'photos');
 const PASSWORD_FILE = path.join(__dirname, '..', 'FUTURE_USERS_LOOK_HERE', 'adminpassword.txt');
@@ -13,17 +15,6 @@ app.use(express.json());
 // Serve frontend static files
 app.use(express.static(path.join(__dirname, '..', 'frontend')));
 
-// ---------------------------
-// Load Admin Password
-// ---------------------------
-function getAdminPassword() {
-  try {
-    return fs.readFileSync(PASSWORD_FILE, 'utf8').trim();
-  } catch (err) {
-    console.error('[AdminPasswordError] Could not read admin password file:', PASSWORD_FILE);
-    return null;
-  }
-}
 
 // ---------------------------
 // Tutor JSON Helpers
@@ -189,7 +180,7 @@ app.post('/api/add-tutor', (req, res) => {
 // ---------------------------
 app.post('/api/admin-login', (req, res) => {
   const { password } = req.body;
-  const realPassword = getAdminPassword();
+  const realPassword = AdminPassword;
 
   if (!realPassword) {
     return res.status(500).json({ success: false, message: 'Server misconfigured: password file missing' });
