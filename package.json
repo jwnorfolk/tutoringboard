@@ -1,0 +1,21 @@
+{
+  "name": "nhs",
+  "version": "1.0.0",
+  "main": "index.js",
+  "bin": {
+    "nhs": "backend/server.js"
+  },
+  "scripts": {
+    "start": "node backend/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
+  }
+}
+

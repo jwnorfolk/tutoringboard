@@ -1,0 +1,29 @@
+Hello!
+
+I'm Josh Truman, DLS Class of 2026 and NHS Tutoring Coordinator.
+I made this HTML and .js as a project.
+
+To install:
+Install node
+use "node [insert filepath]/backend/server.js"
+visiting localhost:3000 should bring it up
+
+To add new members:
+Copy all active members in this spreadsheet into a new spreadsheet
+https://docs.google.com/spreadsheets/d/1joM6MCoYlLEAECO8ZX5gaFIihZcE1B6KllFUBWn4HEo/edit?usp=sharing
+The spreadsheet updates with data from: https://docs.google.com/forms/d/e/1FAIpQLSf5QZvASTbjcioVojLkgkVvgy2fcxwyH7aWAEUybLnVyHdWDg/viewform?usp=dialog
+Download that new spreadsheet as a .xlsx
+Name that .xlsx to tutors.xlsx
+Replace the old tutors.xlsx in this folder with that file
+Run Convert.py
+Replace the tutors.json in backend/data with the new tutors.json in FUTURE_USERS_LOOK_HERE
+Add all photos to frontend/photos with the exact naming style of: [Full Name].jpeg
+
+To run:
+Open terminal
+type "nhs"
+hit enter
+Should get a confirmation message
+
+To set new admin password:
+Change adminpassword.txt to whatever you want the password to be

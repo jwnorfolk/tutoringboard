@@ -1,0 +1,211 @@
+#!/usr/bin/env node
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
+const app = express();
+
+const DATA_PATH = path.join(__dirname, 'data', 'tutors.json');
+const PHOTO_DIR = path.join(__dirname, '..', 'frontend', 'photos');
+const PASSWORD_FILE = path.join(__dirname, '..', 'FUTURE_USERS_LOOK_HERE', 'adminpassword.txt');
+
+app.use(express.json());
+
+// Serve frontend static files
+app.use(express.static(path.join(__dirname, '..', 'frontend')));
+
+// ---------------------------
+// Load Admin Password
+// ---------------------------
+function getAdminPassword() {
+  try {
+    return fs.readFileSync(PASSWORD_FILE, 'utf8').trim();
+  } catch (err) {
+    console.error('[AdminPasswordError] Could not read admin password file:', PASSWORD_FILE);
+    return null;
+  }
+}
+
+// ---------------------------
+// Tutor JSON Helpers
+// ---------------------------
+function loadTutors() {
+  try {
+    const data = fs.readFileSync(DATA_PATH, 'utf8');
+    return JSON.parse(data);
+  } catch (err) {
+    return [];
+  }
+}
+
+function saveTutors(tutors) {
+  fs.writeFileSync(DATA_PATH, JSON.stringify(tutors, null, 2), 'utf8');
+}
+
+// ---------------------------
+// Dynamic Photo Route with Redundancy (unchanged)
+// ---------------------------
+app.get('/photos/:filename', (req, res) => {
+  const requestedFile = req.params.filename;
+  const baseName = path.basename(requestedFile, path.extname(requestedFile)); 
+  const nameWords = baseName.split(/\s+/).filter(Boolean); 
+
+  const extensions = ['.jpg', '.jpeg', '.png'];
+  const candidates = [];
+
+  for (const ext of extensions) {
+    candidates.push(baseName + ext);
+  }
+
+  for (const word of nameWords) {
+    for (const ext of extensions) {
+      candidates.push(`${word}${ext}`);
+      candidates.push(`${word.toLowerCase()}${ext}`);
+    }
+  }
+
+  for (const candidate of candidates) {
+    const candidatePath = path.join(PHOTO_DIR, candidate);
+    if (fs.existsSync(candidatePath)) {
+      return res.sendFile(candidatePath);
+    }
+  }
+
+  console.error(`[PhotoError] No photo found for ${baseName}`);
+  res.status(404).send('Photo not found');
+});
+
+// ---------------------------
+// In-memory last activity tracker
+// ---------------------------
+const lastSeen = {};
+
+// Auto-logout checker (every 30 seconds)
+setInterval(() => {
+  const now = Date.now();
+  const tutors = loadTutors();
+  let updated = false;
+
+  tutors.forEach(tutor => {
+    if (tutor.available && lastSeen[tutor.id] && now - lastSeen[tutor.id] > 30000) {
+      console.log(`[AutoLogout] Tutor ${tutor.id} timed out`);
+      tutor.available = false;
+      updated = true;
+    }
+  });
+
+  if (updated) {
+    saveTutors(tutors);
+  }
+}, 30000);
+
+// ---------------------------
+// API Routes
+// ---------------------------
+
+// Get all tutors
+app.get('/api/tutors', (req, res) => {
+  const tutors = loadTutors();
+  res.json(tutors);
+});
+
+// Login: mark tutor available by ID
+app.post('/api/login', (req, res) => {
+  const { id } = req.body;
+  const tutors = loadTutors();
+  const tutor = tutors.find(t => t.id === id);
+  if (!tutor) return res.status(404).json({ message: 'Tutor not found' });
+
+  tutor.available = true;
+  saveTutors(tutors);
+  lastSeen[id] = Date.now();
+  res.json({ message: 'Logged in', tutor });
+});
+
+// Logout: mark tutor unavailable by ID
+app.post('/api/logout', (req, res) => {
+  const { id } = req.body;
+  const tutors = loadTutors();
+  const tutor = tutors.find(t => t.id === id);
+  if (!tutor) return res.status(404).json({ message: 'Tutor not found' });
+
+  tutor.available = false;
+  saveTutors(tutors);
+  delete lastSeen[id];
+  res.json({ message: 'Logged out', tutor });
+});
+
+// Heartbeat endpoint
+app.post('/api/heartbeat', (req, res) => {
+  const { id } = req.body;
+  if (id) {
+    lastSeen[id] = Date.now();
+  }
+  res.json({ status: 'ok' });
+});
+
+// Admin: toggle availability
+app.post('/api/toggle-availability', (req, res) => {
+  const { id } = req.body;
+  const tutors = loadTutors();
+  const tutor = tutors.find(t => t.id === id);
+  if (!tutor) return res.status(404).json({ message: 'Tutor not found' });
+
+  tutor.available = !tutor.available;
+  saveTutors(tutors);
+  res.json({ message: 'Availability toggled', tutor });
+});
+
+// Admin: delete tutor
+app.post('/api/delete-tutor', (req, res) => {
+  const { id } = req.body;
+  let tutors = loadTutors();
+  const index = tutors.findIndex(t => t.id === id);
+  if (index === -1) return res.status(404).json({ message: 'Tutor not found' });
+
+  tutors.splice(index, 1);
+  saveTutors(tutors);
+  res.json({ message: 'Tutor deleted' });
+});
+
+// Admin: add tutor
+app.post('/api/add-tutor', (req, res) => {
+  const { name, id, photo } = req.body;
+  if (!name || !id || !photo) {
+    return res.status(400).json({ message: 'Missing fields' });
+  }
+
+  let tutors = loadTutors();
+  if (tutors.some(t => t.id === id)) {
+    return res.status(409).json({ message: 'Tutor with this ID already exists' });
+  }
+
+  tutors.push({ name, id, photo, available: false });
+  saveTutors(tutors);
+  res.json({ message: 'Tutor added' });
+});
+
+// ---------------------------
+// Admin login verification
+// ---------------------------
+app.post('/api/admin-login', (req, res) => {
+  const { password } = req.body;
+  const realPassword = getAdminPassword();
+
+  if (!realPassword) {
+    return res.status(500).json({ success: false, message: 'Server misconfigured: password file missing' });
+  }
+
+  if (password === realPassword) {
+    res.json({ success: true });
+  } else {
+    res.json({ success: false });
+  }
+});
+
+// ---------------------------
+// Start Server
+// ---------------------------
+const port = 3000;
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Server running on port ${port}`);
+});

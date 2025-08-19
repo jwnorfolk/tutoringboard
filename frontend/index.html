@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Live Tutoring Board</title>
+<style>
+  body {
+    font-family: "Segoe UI", sans-serif;
+    background-color: #f4f6f8;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+  }
+
+  header {
+    background-color: #0f3e1f;
+    color: white;
+    padding: 1rem 2rem;
+    width: 100%;
+    text-align: center;
+    font-size: 1.5rem;
+    position: relative;
+  }
+
+  .header-buttons {
+    position: absolute;
+    right: 2.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .login-button {
+    background: white;
+    border: none;
+    cursor: pointer;
+    color: #0f3e1f;
+    font-size: 1rem;
+    padding: 0.4rem 0.7rem;
+    border-radius: 5px;
+    user-select: none;
+  }
+
+  .login-button:hover {
+    background: #e8f5e9;
+  }
+
+  .logout-button {
+    background: #f44336;
+    border: none;
+    cursor: pointer;
+    color: white;
+    font-size: 1rem;
+    padding: 0.4rem 0.7rem;
+    border-radius: 5px;
+    user-select: none;
+  }
+  .logout-button:hover {
+    background: #b71c1c;
+  }
+
+  main {
+    flex: 1;
+    width: 100%;
+    max-width: 900px;
+    padding: 1rem;
+    box-sizing: border-box;
+  }
+
+  section {
+    margin-top: 1.5rem;
+  }
+
+  #tutorGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .tutor-card {
+    position: relative;
+    cursor: pointer;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgb(0 0 0 / 0.1);
+    background: white;
+    transition: transform 0.2s ease;
+  }
+
+  .tutor-card.available {
+    border: 4px solid #4caf50;
+  }
+
+  .tutor-card.unavailable {
+    opacity: 0.6;
+  }
+
+  .tutor-card:hover {
+    transform: scale(1.05);
+  }
+
+  .tutor-card img {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    display: block;
+  }
+
+  .tutor-info {
+    padding: 0.5rem;
+    text-align: center;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #333;
+  }
+
+  .tutor-status {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: #4caf50;
+    color: white;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.85rem;
+    font-weight: bold;
+    border-radius: 8px;
+    user-select: none;
+  }
+
+  .tutor-card.unavailable .tutor-status {
+    background: #999;
+  }
+
+  /* Admin Modal */
+  #adminModal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+
+  #adminContent {
+    background: white;
+    border-radius: 10px;
+    padding: 1rem 2rem;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-sizing: border-box;
+    position: relative;
+  }
+
+  #adminContent h2 {
+    margin-top: 0;
+  }
+
+  #adminCloseBtn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+  }
+
+  #adminLogoutBtn {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    background: #f44336;
+    border: none;
+    color: white;
+    padding: 0.2rem 0.5rem;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  #adminLogoutBtn:hover {
+    background: #b71c1c;
+  }
+
+  #adminTutorList {
+    margin-top: 2rem;
+  }
+
+  .admin-tutor {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    gap: 1rem;
+  }
+
+  .admin-tutor img {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 6px;
+  }
+
+  .admin-tutor-name {
+    flex-grow: 1;
+  }
+
+  .admin-btn {
+    background-color: #2196f3;
+    border: none;
+    color: white;
+    padding: 0.3rem 0.6rem;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .admin-btn:hover {
+    background-color: #1565c0;
+  }
+
+  .admin-btn.delete {
+    background-color: #f44336;
+  }
+  .admin-btn.delete:hover {
+    background-color: #b71c1c;
+  }
+
+  #addTutorForm {
+    margin-top: 1.5rem;
+    border-top: 1px solid #ddd;
+    padding-top: 1rem;
+  }
+
+  #addTutorForm input {
+    margin-right: 0.5rem;
+    flex: 1 1 150px;
+  }
+
+  /* Tutor Info Modal */
+  #tutorModal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+  }
+
+  #tutorModalContent {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    position: relative;
+  }
+
+  #tutorModalContent img {
+    width: 100%;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+  }
+
+  #closeTutorModal {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    background: none;
+    border: none;
+    font-size: 2.9rem;
+    cursor: pointer;
+    color: #f44336;
+  }
+  #closeTutorModal:hover {
+    color: #b71c1c;
+  }
+
+  /* Login Modals */
+  .modal {
+    display:none;
+    position: fixed;
+    top:0; left:0; right:0; bottom:0;
+    background: rgba(0,0,0,0.5);
+    z-index:3000;
+    justify-content:center;
+    align-items:center;
+  }
+
+  .modal-content {
+    background:white;
+    padding:1.5rem;
+    border-radius:10px;
+    width:90%;
+    max-width:400px;
+    text-align:center;
+    position:relative;
+  }
+
+  .modal-content button.close {
+    position:absolute;
+    top:10px;
+    right:20px;
+    font-size:2rem;
+    background:none;
+    border:none;
+    cursor:pointer;
+    color:#f44336;
+  }
+  .modal-content button.close:hover {
+    color:#b71c1c;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  NHS Live Tutoring Board
+  <div class="header-buttons" id="headerButtons">
+    <button id="tutorLoginBtn" class="login-button">Tutor</button>
+    <button id="settingsBtn" class="login-button">Admin</button>
+  </div>
+</header>
+
+<main>
+  <section>
+    <h2>Current Tutor Availability</h2>
+    <div id="tutorGrid"></div>
+  </section>
+</main>
+
+<!-- Admin Modal -->
+<div id="adminModal" class="modal">
+  <div id="adminContent">
+    <button id="adminCloseBtn" title="Close admin panel">&times;</button>
+    <button id="adminLogoutBtn" title="Logout Admin">Logout Admin</button>
+    <h2>Admin Panel</h2>
+
+    <div id="adminTutorList"></div>
+
+    <form id="addTutorForm">
+      <h3>Add New Tutor</h3>
+      <input id="newTutorName" placeholder="Name" required />
+      <input id="newTutorId" placeholder="Student ID" required />
+      <input id="newTutorPhoto" placeholder="Photo filename (e.g. alice.jpg)" required />
+      <button type="submit">Add Tutor</button>
+    </form>
+  </div>
+</div>
+
+<!-- Tutor Info Modal -->
+<div id="tutorModal">
+  <div id="tutorModalContent">
+    <button id="closeTutorModal">&times;</button>
+    <img id="modalPhoto" src="" alt="" />
+    <h2 id="modalName"></h2>
+    <p id="modalGrade"></p>
+    <p id="modalSubjects"></p>
+  </div>
+</div>
+
+<!-- Tutor Login Modal -->
+<div id="tutorLoginModal" class="modal">
+  <div class="modal-content">
+    <button class="close" onclick="closeTutorLoginModal()">&times;</button>
+    <h3>Enter Student ID</h3>
+    <form id="loginForm">
+      <input id="studentId" placeholder="Student ID" required style="padding:0.5rem; font-size:1rem; width:100%; margin-bottom:1rem; border:1px solid #ccc; border-radius:5px;" />
+      <button type="submit" style="padding:0.5rem 1rem; background:#1e88e5; color:white; border:none; border-radius:5px; cursor:pointer;">Log In</button>
+    </form>
+    <button id="logoutButton" style="display:none; margin-top:1rem; padding:0.5rem 1rem; background:#f44336; color:white; border:none; border-radius:5px; cursor:pointer;">Log Out</button>
+  </div>
+</div>
+
+<!-- Admin Password Modal -->
+<div id="passwordModal" class="modal">
+  <div class="modal-content">
+    <button class="close" onclick="closePasswordModal()">&times;</button>
+    <h3>Enter Admin Password</h3>
+    <form id="adminPasswordForm">
+      <input id="adminPasswordInput" type="password" placeholder="Password" style="padding:0.5rem; font-size:1rem; width:100%; margin-bottom:1rem; border:1px solid #ccc; border-radius:5px;" required />
+      <button type="submit">Log In</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  const tutorGrid = document.getElementById('tutorGrid');
+  const loginForm = document.getElementById('loginForm');
+  const studentIdInput = document.getElementById('studentId');
+  const logoutButton = document.getElementById('logoutButton');
+
+  const settingsBtn = document.getElementById('settingsBtn');
+  const adminModal = document.getElementById('adminModal');
+  const adminCloseBtn = document.getElementById('adminCloseBtn');
+  const adminLogoutBtn = document.getElementById('adminLogoutBtn');
+  const adminTutorList = document.getElementById('adminTutorList');
+  const addTutorForm = document.getElementById('addTutorForm');
+  const newTutorName = document.getElementById('newTutorName');
+  const newTutorId = document.getElementById('newTutorId');
+  const newTutorPhoto = document.getElementById('newTutorPhoto');
+
+  const tutorModal = document.getElementById('tutorModal');
+  const closeTutorModal = document.getElementById('closeTutorModal');
+  const modalPhoto = document.getElementById('modalPhoto');
+  const modalName = document.getElementById('modalName');
+  const modalGrade = document.getElementById('modalGrade');
+  const modalSubjects = document.getElementById('modalSubjects');
+
+  const headerButtons = document.getElementById('headerButtons');
+
+  let loggedInId = null;
+  let adminLoggedIn = false;
+
+  // Reset tutor login modal UI (show login form, hide logout button, clear input)
+  function resetTutorLoginModalUI() {
+    loginForm.style.display = 'block';
+    logoutButton.style.display = 'none';
+    studentIdInput.value = '';
+  }
+
+  // Show Tutor and Admin buttons in header and attach event listeners
+  function showLoginButtons() {
+    headerButtons.innerHTML = `
+      <button id="tutorLoginBtn" class="login-button">Tutor</button>
+      <button id="settingsBtn" class="login-button">Admin</button>
+    `;
+    document.getElementById('tutorLoginBtn').addEventListener('click', () => {
+      tutorLoginModal.style.display = 'flex';
+      resetTutorLoginModalUI();
+    });
+    document.getElementById('settingsBtn').addEventListener('click', () => {
+      if(adminLoggedIn) {
+        adminModal.style.display = 'flex';
+      } else {
+        document.getElementById('passwordModal').style.display = 'flex';
+        document.getElementById('adminPasswordInput').value = '';
+        document.getElementById('adminPasswordInput').focus();
+      }
+    });
+  }
+
+  // Show logout button in header and attach logout handler
+  function showLogoutButton() {
+    headerButtons.innerHTML = `
+      <button id="logoutBtn" class="logout-button">Logout</button>
+    `;
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      if (!loggedInId) return;
+      const res = await fetch('/api/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: loggedInId })
+      });
+
+      if (res.ok) {
+        loggedInId = null;
+        showLoginButtons();
+        fetchTutors();
+      } else {
+        alert('Logout failed.');
+      }
+    });
+  }
+
+  // Tutor login button opens login modal
+  headerButtons.querySelector('#tutorLoginBtn')?.addEventListener('click', () => {
+    tutorLoginModal.style.display = 'flex';
+    resetTutorLoginModalUI();
+  });
+
+  function closeTutorLoginModal() {
+    tutorLoginModal.style.display = 'none';
+  }
+
+  async function fetchTutors() {
+    const res = await fetch('/api/tutors');
+    if (!res.ok) {
+      console.error('Failed to fetch tutors:', res.status);
+      return;
+    }
+    let tutors = await res.json();
+
+    tutors.sort((a, b) => {
+      if (a.available === b.available) return 0;
+      return a.available ? -1 : 1;
+    });
+
+    tutorGrid.innerHTML = '';
+    tutors.forEach(tutor => {
+      const card = document.createElement('div');
+      card.className = `tutor-card ${tutor.available ? 'available' : 'unavailable'}`;
+      card.innerHTML = `
+        <img src="photos/${tutor.photo}" alt="${tutor.name}" />
+        <div class="tutor-info">${tutor.name}</div>
+        <div class="tutor-status">${tutor.available ? 'Available' : 'Unavailable'}</div>
+      `;
+      card.addEventListener('click', () => openTutorModal(tutor));
+      tutorGrid.appendChild(card);
+    });
+
+    if(adminLoggedIn) {
+      renderAdminTutorList(tutors);
+    }
+  }
+
+  function openTutorModal(tutor) {
+    modalPhoto.src = `photos/${tutor.photo}`;
+    modalPhoto.alt = tutor.name;
+    modalName.textContent = tutor.name;
+    modalGrade.textContent = `Grade: ${tutor.grade || 'N/A'}`;
+    modalSubjects.textContent = `Subjects: ${tutor.subjects?.join(', ') || 'N/A'}`;
+    tutorModal.style.display = 'flex';
+  }
+
+  closeTutorModal.addEventListener('click', () => {
+    tutorModal.style.display = 'none';
+  });
+
+  // Tutor login form submission
+  loginForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const id = studentIdInput.value.trim();
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id })
+    });
+
+    if (res.ok) {
+      loggedInId = id;
+      logoutButton.style.display = 'inline-block';
+      loginForm.style.display = 'none';
+      tutorLoginModal.style.display = 'none'; // Close login modal
+      showLogoutButton(); // Update header buttons
+      fetchTutors();
+    } else {
+      alert('Login failed. Check your ID.');
+    }
+  });
+
+  // Tutor logout button inside modal
+  logoutButton.addEventListener('click', async () => {
+    if (!loggedInId) return;
+    const res = await fetch('/api/logout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: loggedInId })
+    });
+
+    if (res.ok) {
+      loggedInId = null;
+      logoutButton.style.display = 'none';
+      loginForm.style.display = 'block';
+      studentIdInput.value = '';
+      showLoginButtons(); // Restore header buttons
+      fetchTutors();
+      tutorLoginModal.style.display = 'none'; // Close modal on logout
+    } else {
+      alert('Logout failed.');
+    }
+  });
+
+  settingsBtn.addEventListener('click', () => {
+    if(adminLoggedIn) {
+      adminModal.style.display = 'flex';
+    } else {
+      document.getElementById('passwordModal').style.display = 'flex';
+      document.getElementById('adminPasswordInput').value = '';
+      document.getElementById('adminPasswordInput').focus();
+    }
+  });
+
+  function closePasswordModal() {
+    document.getElementById('passwordModal').style.display = 'none';
+  }
+
+  document.getElementById('adminPasswordForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = document.getElementById('adminPasswordInput').value;
+
+    const res = await fetch('/api/admin-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: input })
+    });
+
+    if(res.ok) {
+      const data = await res.json();
+      if(data.success) {
+        adminLoggedIn = true;
+        closePasswordModal();
+        adminModal.style.display = 'flex';
+        fetchTutors();
+      } else {
+        alert('Wrong password');
+      }
+    } else {
+      alert('Login request failed');
+    }
+  });
+
+  adminCloseBtn.addEventListener('click', () => {
+    adminModal.style.display = 'none';
+  });
+
+  adminLogoutBtn.addEventListener('click', () => {
+    adminLoggedIn = false;
+    adminModal.style.display = 'none';
+    alert('Exited admin mode. To reopen, you’ll need the password.');
+  });
+
+  function renderAdminTutorList(tutors) {
+    adminTutorList.innerHTML = tutors.map(tutor => `
+      <div class="admin-tutor">
+        <img src="photos/${tutor.photo}" alt="${tutor.name}" />
+        <div class="admin-tutor-name">${tutor.name} (${tutor.id})</div>
+        <button class="admin-btn toggle-availability" data-id="${tutor.id}">
+          ${tutor.available ? 'Set Unavailable' : 'Set Available'}
+        </button>
+        <button class="admin-btn delete" data-id="${tutor.id}">Delete</button>
+      </div>
+    `).join('');
+
+    document.querySelectorAll('.toggle-availability').forEach(btn => {
+      btn.onclick = async () => {
+        const id = btn.dataset.id;
+        const res = await fetch('/api/toggle-availability', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        if(res.ok) {
+          fetchTutors();
+        } else {
+          alert('Failed to toggle availability');
+        }
+      };
+    });
+
+    document.querySelectorAll('.delete').forEach(btn => {
+      btn.onclick = async () => {
+        if(!confirm('Delete this tutor?')) return;
+        const id = btn.dataset.id;
+        const res = await fetch('/api/delete-tutor', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        if(res.ok) {
+          fetchTutors();
+        } else {
+          alert('Failed to delete tutor');
+        }
+      };
+    });
+  }
+
+  addTutorForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = newTutorName.value.trim();
+    const id = newTutorId.value.trim();
+    const photo = newTutorPhoto.value.trim();
+
+    const res = await fetch('/api/add-tutor', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, id, photo })
+    });
+
+    if(res.ok) {
+      newTutorName.value = '';
+      newTutorId.value = '';
+      newTutorPhoto.value = '';
+      fetchTutors();
+    } else {
+      alert('Failed to add tutor');
+    }
+  });
+
+  // Initialize UI on page load
+  if(loggedInId) {
+    showLogoutButton();
+  } else {
+    showLoginButtons();
+  }
+
+  fetchTutors();
+  setInterval(fetchTutors, 5000);
+</script>
+
+</body>
+</html>
