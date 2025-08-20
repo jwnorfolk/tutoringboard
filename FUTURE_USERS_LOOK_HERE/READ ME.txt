@@ -8,8 +8,8 @@ jstruman4929@gmail.com
 25248@dlshs.org
 
 To add new members:
-The code inputs a .xlsx
-https://docs.google.com/spreadsheets/d/1joM6MCoYlLEAECO8ZX5gaFIihZcE1B6KllFUBWn4HEo/edit?usp=sharing
+The code takes a .xlsx as input
+Use this spreadsheet: https://docs.google.com/spreadsheets/d/1joM6MCoYlLEAECO8ZX5gaFIihZcE1B6KllFUBWn4HEo/edit?usp=sharing
 The spreadsheet updates with data from: https://docs.google.com/forms/d/e/1FAIpQLSf5QZvASTbjcioVojLkgkVvgy2fcxwyH7aWAEUybLnVyHdWDg/viewform?usp=dialog
 Since you don't have edit access to the spreadsheet, make a copy.
 Delete all old submissions (they should be ordered chronologically, so delete any chunks from past years)
@@ -22,9 +22,15 @@ Full Name: Joshua Truman (Make sure this name matches the [Full Name] used for t
                          "Di-Truman" nor "Josh")
 Grade: 12
 Awesome! Now:
-Download as a .xlsx and put it in the same folder as this file.
+Download that cleaned up spreadsheet as a .xlsx and put it in the same folder as this file.
 Name it to tutors.xlsx (Replace the old one if there is one)
-Run Convert.py
+Run convert.exe
+It should open a terminal that shows that everything is working
+    If that doesn't work for some reason, get someone who knows Computer Science to use the main.rs in convert/src
+    (Note: The path files will be different because they are configured for the .exe, not the .rs)
 Great! That part's done. Now:
 Add all photos to frontend/photos with the exact naming style of: [Full Name].jpeg
+
+Once all that is done, push to origin on GitHub desktop
+The website should auto update
 
