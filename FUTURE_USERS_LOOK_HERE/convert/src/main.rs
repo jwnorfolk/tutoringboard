@@ -15,8 +15,8 @@ struct Tutor {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let script_dir = std::env::current_dir()?;
-    let xlsx_path = script_dir.join("../tutors.xlsx");
-    let json_path = script_dir.join("../../backend/data/tutors.json");
+    let xlsx_path = script_dir.join("tutors.xlsx");
+    let json_path = script_dir.join("../backend/data/tutors.json");
 
     let mut workbook: Xlsx<_> = open_workbook(&xlsx_path)?;
 
