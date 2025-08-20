@@ -27,3 +27,4 @@ Name it to tutors.xlsx (Replace the old one if there is one)
 Run Convert.py
 Great! That part's done. Now:
 Add all photos to frontend/photos with the exact naming style of: [Full Name].jpeg
+
