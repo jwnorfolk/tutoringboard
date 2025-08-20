@@ -3581,5 +3581,63 @@
       "Julius Caesar",
       "Lord of the Flies"
     ]
+  },
+  {
+    "id": "25267",
+    "name": "Lee Vaouli",
+    "available": false,
+    "photo": "Lee Vaouli.jpeg",
+    "grade": "12",
+    "subjects": [
+      "Algebra 1",
+      "Algebra 1 H",
+      "Algebra 2",
+      "Algebra 2 W/ Trig",
+      "Algebra 2 W/ Trig H",
+      "Geometry",
+      "Geometry H",
+      "Biology",
+      "Biology H",
+      "AP Biology",
+      "Chemistry",
+      "Chemistry H",
+      "AP Chemistry",
+      "World History",
+      "United States History",
+      "Latin 1",
+      "Latin 2",
+      "Latin 3",
+      "English 1 H",
+      "English 2 H",
+      "AP English Language",
+      "Farenheit 451",
+      "Romeo and Juliet",
+      "Cannery Row",
+      "Great Expectations",
+      "Julius Caesar",
+      "Antigone",
+      "Lord of the Flies",
+      "Cat's Cradle",
+      "The Great Gatsby",
+      "Moby Dick"
+    ]
+  },
+  {
+    "id": "25699",
+    "name": "Alex Lordan",
+    "available": false,
+    "photo": "Alex Lordan.jpeg",
+    "grade": "11",
+    "subjects": [
+      "Algebra 1",
+      "Biology",
+      "World History",
+      "AP Human Geography",
+      "Spanish 1",
+      "First Aid/Health",
+      "English 1",
+      "Black Boy",
+      "Farenheit 451"
+    ]
   }
 ]
