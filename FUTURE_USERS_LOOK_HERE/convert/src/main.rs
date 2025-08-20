@@ -2,6 +2,7 @@ use calamine::{open_workbook, DataType, Reader, Xlsx};
 use serde::{Serialize, Deserialize};
 use std::collections::HashSet;
 use std::fs::File;
+use std::io;
 
 #[derive(Serialize, Deserialize)]
 struct Tutor {
@@ -13,22 +14,38 @@ struct Tutor {
     subjects: Vec<String>,
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() {
+    if let Err(e) = run() {
+        match e.downcast_ref::<io::Error>() {
+            Some(io_err) if io_err.kind() == io::ErrorKind::NotFound => {
+                eprintln!("❌ ERROR: Could not find required file. Make sure `tutors.xlsx` is in the same folder as this program.");
+            }
+            _ => eprintln!("❌ ERROR: {}", e),
+        }
+        std::process::exit(1);
+    }
+}
+
+fn run() -> Result<(), Box<dyn std::error::Error>> {
     let script_dir = std::env::current_dir()?;
     let xlsx_path = script_dir.join("tutors.xlsx");
     let json_path = script_dir.join("../backend/data/tutors.json");
 
-    let mut workbook: Xlsx<_> = open_workbook(&xlsx_path)?;
+    // Open workbook
+    let mut workbook: Xlsx<_> = open_workbook(&xlsx_path)
+        .map_err(|_| format!("Failed to open Excel file: {:?}", xlsx_path))?;
 
     // Auto-detect first sheet
     let sheet_name = workbook
         .sheet_names()
         .get(0)
-        .ok_or("No sheets found")?
+        .ok_or("❌ ERROR: No sheets found in the Excel file")?
         .to_string();
 
     // Get range
-    let range = workbook.worksheet_range(&sheet_name)?;
+    let range = workbook
+        .worksheet_range(&sheet_name)
+        .map_err(|_| format!("❌ ERROR: Failed to read sheet `{}`", sheet_name))?;
 
     let mut tutors_list: Vec<Tutor> = Vec::new();
     let mut seen_ids: HashSet<String> = HashSet::new();
@@ -38,7 +55,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let student_id = row.get(2)
             .map(|cell| match cell {
                 DataType::Int(i) => i.to_string(),
-                DataType::Float(f) => (*f as i64).to_string(),  // dereference float
+                DataType::Float(f) => (*f as i64).to_string(),
                 DataType::String(s) => s.trim().to_string(),
                 _ => "Unknown_ID".to_string(),
             })
@@ -60,7 +77,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let grade = row.get(4)
             .map(|cell| match cell {
                 DataType::Int(i) => i.to_string(),
-                DataType::Float(f) => (*f as i64).to_string(),  // dereference float
+                DataType::Float(f) => (*f as i64).to_string(),
                 DataType::String(s) => s.trim().to_string(),
                 _ => "Unknown Grade".to_string(),
             })
@@ -91,9 +108,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         });
     }
 
-    let file = File::create(&json_path)?;
+    // Make sure parent directory exists
+    if let Some(parent) = json_path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+
+    // Save JSON
+    let file = File::create(&json_path)
+        .map_err(|_| format!("❌ ERROR: Failed to create JSON file at {:?}", json_path))?;
     serde_json::to_writer_pretty(file, &tutors_list)?;
 
-    println!("Saved {} tutors to {:?}", tutors_list.len(), json_path);
+    println!("✅ Saved {} tutors to {:?}", tutors_list.len(), json_path);
     Ok(())
 }
