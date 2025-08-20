@@ -4,7 +4,7 @@ from openpyxl import load_workbook
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 xlsx_file = os.path.join(script_dir, "tutors.xlsx")
-json_file = os.path.join(script_dir, "tutors.json")
+json_file = os.path.join(script_dir, "../backend/data/tutors.json")
 
 wb = load_workbook(xlsx_file)
 sheet = wb.active

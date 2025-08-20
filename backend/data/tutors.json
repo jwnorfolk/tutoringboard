@@ -2,7 +2,7 @@
   {
     "id": "25831",
     "name": "Zachary Hertstein",
-    "available": true,
+    "available": false,
     "photo": "Zachary Hertstein.jpeg",
     "grade": "10",
     "subjects": [
@@ -25,7 +25,7 @@
   {
     "id": "25253",
     "name": "Sean Edens",
-    "available": true,
+    "available": false,
     "photo": "Sean Edens.jpeg",
     "grade": "12",
     "subjects": [
@@ -64,7 +64,7 @@
   {
     "id": "25736",
     "name": "Angel Molina-Oncena",
-    "available": true,
+    "available": false,
     "photo": "Angel Molina-Oncena.jpeg",
     "grade": "11",
     "subjects": [
@@ -1281,9 +1281,9 @@
   },
   {
     "id": "25200",
-    "name": "Tyce Di Pretoro",
+    "name": "Tyce di Pretoro",
     "available": false,
-    "photo": "Tyce Di Pretoro.jpeg",
+    "photo": "Tyce di Pretoro.jpeg",
     "grade": "12",
     "subjects": [
       "Algebra 1",
@@ -1309,9 +1309,9 @@
   },
   {
     "id": "25967",
-    "name": "Liam St. John",
+    "name": "Liam St John",
     "available": false,
-    "photo": "Liam St. John.jpeg",
+    "photo": "Liam St John.jpeg",
     "grade": "10",
     "subjects": [
       "Algebra 1",
@@ -1456,9 +1456,9 @@
   },
   {
     "id": "25294",
-    "name": "Ernest Lizardo",
+    "name": "Ernest Bon Lizardo",
     "available": false,
-    "photo": "Ernest Lizardo.jpeg",
+    "photo": "Ernest Bon Lizardo.jpeg",
     "grade": "12",
     "subjects": [
       "Algebra 1",
@@ -1733,9 +1733,9 @@
   },
   {
     "id": "25236",
-    "name": "Matthew Dwinell",
+    "name": "Matthew David Dwinell",
     "available": false,
-    "photo": "Matthew Dwinell.jpeg",
+    "photo": "Matthew David Dwinell.jpeg",
     "grade": "12",
     "subjects": [
       "Algebra 1",
@@ -1976,9 +1976,9 @@
   },
   {
     "id": "25887",
-    "name": "Tate Lustig",
+    "name": "Tate",
     "available": false,
-    "photo": "Tate Lustig.jpeg",
+    "photo": "Tate.jpeg",
     "grade": "10",
     "subjects": [
       "Algebra 1",
@@ -2085,9 +2085,9 @@
   },
   {
     "id": "26025",
-    "name": "Luke Schroeder",
+    "name": "Luke schroeder",
     "available": false,
-    "photo": "Luke Schroeder.jpeg",
+    "photo": "Luke schroeder.jpeg",
     "grade": "10",
     "subjects": [
       "Algebra 1",
@@ -2580,9 +2580,9 @@
   },
   {
     "id": "26002",
-    "name": "Dominic Kauffman",
+    "name": "dominic kauffman",
     "available": false,
-    "photo": "Dominic Kauffman.jpeg",
+    "photo": "dominic kauffman.jpeg",
     "grade": "10",
     "subjects": [
       "Algebra 1",
@@ -3321,9 +3321,9 @@
   },
   {
     "id": "25502",
-    "name": "Todd McClure",
+    "name": "Todd Andrew McClure",
     "available": false,
-    "photo": "Todd McClure.jpeg",
+    "photo": "Todd Andrew McClure.jpeg",
     "grade": "11",
     "subjects": [
       "Algebra 1",
@@ -3500,9 +3500,9 @@
   },
   {
     "id": "25245",
-    "name": "Brayden Berry",
+    "name": "Brayden Berrt",
     "available": false,
-    "photo": "Brayden Berry.jpeg",
+    "photo": "Brayden Berrt.jpeg",
     "grade": "12",
     "subjects": [
       "Algebra 1",
