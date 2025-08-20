@@ -15,6 +15,8 @@ struct Tutor {
 }
 
 fn main() {
+    println!("🚀 Starting tutor converter...");
+
     if let Err(e) = run() {
         match e.downcast_ref::<io::Error>() {
             Some(io_err) if io_err.kind() == io::ErrorKind::NotFound => {
@@ -24,16 +26,24 @@ fn main() {
         }
         std::process::exit(1);
     }
+
+    println!("✅ Program finished successfully!");
 }
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
     let script_dir = std::env::current_dir()?;
+    println!("📂 Current working directory: {:?}", script_dir);
+
     let xlsx_path = script_dir.join("tutors.xlsx");
     let json_path = script_dir.join("../backend/data/tutors.json");
 
+    println!("🔍 Looking for Excel file at: {:?}", xlsx_path);
+    println!("📝 Will save JSON output to: {:?}", json_path);
+
     // Open workbook
     let mut workbook: Xlsx<_> = open_workbook(&xlsx_path)
-        .map_err(|_| format!("Failed to open Excel file: {:?}", xlsx_path))?;
+        .map_err(|_| format!("❌ ERROR: Failed to open Excel file: {:?}", xlsx_path))?;
+    println!("✅ Successfully opened Excel file!");
 
     // Auto-detect first sheet
     let sheet_name = workbook
@@ -41,16 +51,20 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         .get(0)
         .ok_or("❌ ERROR: No sheets found in the Excel file")?
         .to_string();
+    println!("📄 Using sheet: {}", sheet_name);
 
     // Get range
     let range = workbook
         .worksheet_range(&sheet_name)
         .map_err(|_| format!("❌ ERROR: Failed to read sheet `{}`", sheet_name))?;
+    println!("✅ Successfully read sheet with {} rows", range.height());
 
     let mut tutors_list: Vec<Tutor> = Vec::new();
     let mut seen_ids: HashSet<String> = HashSet::new();
 
-    for row in range.rows().skip(1) {
+    for (row_idx, row) in range.rows().enumerate().skip(1) {
+        println!("➡️ Processing row {}", row_idx + 1);
+
         // ID
         let student_id = row.get(2)
             .map(|cell| match cell {
@@ -61,7 +75,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             })
             .unwrap_or("Unknown_ID".to_string());
 
+        println!("   👤 Student ID: {}", student_id);
+
         if seen_ids.contains(&student_id) {
+            println!("   ⚠️ Duplicate ID found, skipping row {}", row_idx + 1);
             continue;
         }
         seen_ids.insert(student_id.clone());
@@ -72,6 +89,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             .unwrap_or("Unknown Name")
             .trim()
             .to_string();
+        println!("   🏷️ Name: {}", full_name);
 
         // Grade
         let grade = row.get(4)
@@ -82,6 +100,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 _ => "Unknown Grade".to_string(),
             })
             .unwrap_or("Unknown Grade".to_string());
+        println!("   🎓 Grade: {}", grade);
 
         // Subjects (columns 5..12, handle missing)
         let mut subjects = Vec::new();
@@ -97,6 +116,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
         }
+        println!("   📚 Subjects: {:?}", subjects);
 
         tutors_list.push(Tutor {
             id: student_id,
@@ -108,8 +128,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         });
     }
 
+    println!("💾 Preparing to save {} tutors...", tutors_list.len());
+
     // Make sure parent directory exists
     if let Some(parent) = json_path.parent() {
+        println!("📂 Ensuring directory exists: {:?}", parent);
         std::fs::create_dir_all(parent)?;
     }
 
