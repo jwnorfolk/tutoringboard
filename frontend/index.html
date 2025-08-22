@@ -120,30 +120,21 @@ h2 {
 
 @media (max-width: 600px) {
   #tutorGrid {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: 0.5rem;
   }
   .tutor-card {
-    width: 90%;
-    font-size: 0.85rem;
-  }
-  .tutor-status {
-    font-size: 0.7rem;
-    padding: 0.18rem 0.45rem;
-    top: 5px;
-    right: 5px;
-  }
-  .tutor-card img {
-    height: 65%;
+    width: auto; /* let grid control width */
   }
 }
+
 @media (max-width: 400px) {
   #tutorGrid {
-    grid-template-columns: 1fr;
+    justify-items: center;       /* center the single card */
   }
   .tutor-card {
-    width: 60%;
+    width: 90%; /* relative to column, optional */
     max-width: 320px;
-    margin: 0 auto;
   }
 }
 
