@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 const express = require('express');
+const XLSX = require('xlsx');
 const fs = require('fs');
 const path = require('path');
 const app = express();
 
 const AdminPassword = process.env.ADMIN_PASSWORD;
 
-const DATA_PATH = path.join(__dirname, 'data', 'tutors.json');
+const XLSX_PATH = path.join(__dirname, '..', 'FUTURE_USERS_LOOK_HERE', 'tutors.xlsx');
 const PHOTO_DIR = path.join(__dirname, '..', 'frontend', 'photos');
 const PASSWORD_FILE = path.join(__dirname, '..', 'FUTURE_USERS_LOOK_HERE', 'adminpassword.txt');
 
@@ -21,15 +22,53 @@ app.use(express.static(path.join(__dirname, '..', 'frontend')));
 // ---------------------------
 function loadTutors() {
   try {
-    const data = fs.readFileSync(DATA_PATH, 'utf8');
-    return JSON.parse(data);
+    const workbook = XLSX.readFile(XLSX_PATH);
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(sheet, {header:1});
+    // rows[0] is header, rows[1...] are data
+    const tutors = rows.slice(1).map(row => {
+      // Columns: 0=timestamp, 1=email, 2=student ID, 3=full name, 4=grade, 5-11=subjects
+      const id = row[2] ? String(row[2]).trim() : '';
+      const name = row[3] ? String(row[3]).trim() : '';
+      const grade = row[4] ? String(row[4]).trim() : '';
+      const subjects = row.slice(5, 12).filter(Boolean).map(s => String(s).trim());
+      // Derive photo filename: "Full Name.jpeg"
+      const photo = name ? `${name}.jpeg` : '';
+      return {
+        name,
+        id,
+        photo,
+        grade,
+        subjects,
+        available: false // default, can be set elsewhere
+      };
+    });
+    console.log(`[Tutors] Successfully read ${tutors.length} tutors from spreadsheet.`);
+    return tutors;
   } catch (err) {
     return [];
   }
 }
 
 function saveTutors(tutors) {
-  fs.writeFileSync(DATA_PATH, JSON.stringify(tutors, null, 2), 'utf8');
+  try {
+    // Convert subjects array to comma-separated string for Excel
+    const rows = tutors.map(t => ({
+      Name: t.name,
+      ID: t.id,
+      Photo: t.photo,
+      Grade: t.grade,
+      Subjects: Array.isArray(t.subjects) ? t.subjects.join(', ') : t.subjects,
+      Available: t.available
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Tutors');
+    XLSX.writeFile(workbook, XLSX_PATH);
+  } catch (err) {
+    console.error('Error saving tutors to .xlsx:', err);
+  }
 }
 
 // ---------------------------
