@@ -1125,6 +1125,17 @@ button.close:hover {
 
   fetchTutors();
   setInterval(fetchTutors, 5000);
+
+  // Heartbeat to keep tutor logged in
+  setInterval(() => {
+    if (loggedInId) {
+      fetch('/api/heartbeat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: loggedInId })
+      });
+    }
+  }, 5000);
 </script>
 <script>
 const editModal = document.getElementById("editTutorModal");
