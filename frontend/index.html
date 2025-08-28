@@ -190,6 +190,25 @@ h2 {
   background: #aaa;
 }
 
+/* Add this CSS near .tutor-status or .tutor-card */
+.tutor-grade-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: #4caf50; /* default: available green */
+  color: white;
+  padding: 0.3rem 0.75rem;
+  font-size: 1rem;
+  font-weight: bold;
+  border-radius: 20px;
+  user-select: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  z-index: 0;
+}
+.tutor-card.unavailable .tutor-grade-badge {
+  background: #aaa;
+}
+
 /* MODALS */
 .modal, #tutorModal {
   display: none;
@@ -943,6 +962,7 @@ button.close:hover {
       card.className = `tutor-card ${tutor.available ? 'available' : 'unavailable'}`;
       card.innerHTML = `
         <img src="photos/${tutor.photo}" alt="${tutor.name}" />
+        <div class="tutor-grade-badge">${tutor.grade || 'N/A'}</div>
         <div class="tutor-info">${tutor.name}</div>
         <div class="tutor-status">${tutor.available ? 'Available' : 'Unavailable'}</div>
       `;

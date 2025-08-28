@@ -27,24 +27,26 @@ function loadTutors() {
     const sheet = workbook.Sheets[sheetName];
     const rows = XLSX.utils.sheet_to_json(sheet, {header:1});
     // rows[0] is header, rows[1...] are data
-    const tutors = rows.slice(1).map(row => {
-      // Columns: 0=timestamp, 1=email, 2=student ID, 3=full name, 4=grade, 5-11=subjects
+    const seenIds = new Set();
+    const tutors = [];
+    rows.slice(1).forEach(row => {
       const id = row[2] ? String(row[2]).trim() : '';
+      if (!id || seenIds.has(id)) return;
+      seenIds.add(id);
       const name = row[3] ? String(row[3]).trim() : '';
       const grade = row[4] ? String(row[4]).trim() : '';
       const subjects = row.slice(5, 12).filter(Boolean).map(s => String(s).trim());
-      // Derive photo filename: "Full Name.jpeg"
+      const available = row[12] === true || row[12] === 'true' || row[12] === '1';
       const photo = name ? `${name}.jpeg` : '';
-      return {
+      tutors.push({
         name,
         id,
         photo,
         grade,
         subjects,
-        available: false // default, can be set elsewhere
-      };
+        available
+      });
     });
-    console.log(`[Tutors] Successfully read ${tutors.length} tutors from spreadsheet.`);
     return tutors;
   } catch (err) {
     return [];
@@ -74,6 +76,8 @@ function saveTutors(tutors) {
       for (let i = 0; i < 7; i++) {
         row[5+i] = tutor.subjects && tutor.subjects[i] ? tutor.subjects[i] : '';
       }
+      // Availability: M (column 12)
+      row[12] = tutor.available ? 'true' : 'false';
       newRows.push(row);
     });
     const worksheet = XLSX.utils.aoa_to_sheet(newRows);
