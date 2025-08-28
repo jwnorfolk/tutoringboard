@@ -70,7 +70,7 @@ header {
 main {
   flex: 1;
   width: 100%;
-  max-width: 1000px;
+  max-width: 1400px; /* increased max-width for wider grid */
   padding: 2rem 1rem;
   box-sizing: border-box;
 }
@@ -86,10 +86,11 @@ h2 {
 /* GRID */
 #tutorGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 0.7rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* more tiles per row */
+  gap: 1.2rem; /* more space between tiles */
   margin-top: 1rem;
   width: 100%;
+  max-width: 1400px; /* match main for wider grid */
   box-sizing: border-box;
 }
 
@@ -102,7 +103,8 @@ h2 {
   box-shadow: 0 6px 14px rgba(0,0,0,0.1);
   background: white;
   transition: transform 0.25s ease, box-shadow 0.25s ease;
-  height: 200px; /* fixed height for all screens */
+  height: 280px; /* increased height for larger tiles */
+  font-size: 1.4rem; /* slightly larger than default */
 }
 
 @media (max-width: 900px) {
@@ -153,7 +155,7 @@ h2 {
   padding: 0.5rem 0.7rem;
   text-align: center;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 1.4rem; /* slightly larger than default */
   color: #2c3e50;
   flex-grow: 1;
   display: flex;
@@ -178,7 +180,7 @@ h2 {
   background: #4caf50;
   color: white;
   padding: 0.3rem 0.75rem;
-  font-size: 0.85rem;
+  font-size: 1rem; /* slightly larger status text */
   font-weight: bold;
   border-radius: 20px;
   user-select: none;
