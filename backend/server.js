@@ -53,19 +53,33 @@ function loadTutors() {
 
 function saveTutors(tutors) {
   try {
-    // Convert subjects array to comma-separated string for Excel
-    const rows = tutors.map(t => ({
-      Name: t.name,
-      ID: t.id,
-      Photo: t.photo,
-      Grade: t.grade,
-      Subjects: Array.isArray(t.subjects) ? t.subjects.join(', ') : t.subjects,
-      Available: t.available
-    }));
-    const worksheet = XLSX.utils.json_to_sheet(rows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Tutors');
-    XLSX.writeFile(workbook, XLSX_PATH);
+    // Read the original sheet to preserve timestamp/email columns
+    const workbook = XLSX.readFile(XLSX_PATH);
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const originalRows = XLSX.utils.sheet_to_json(sheet, {header:1});
+    const header = originalRows[0];
+    // Build new rows, preserving columns A and B
+    const newRows = [header];
+    tutors.forEach((tutor, idx) => {
+      // Try to preserve timestamp/email if present in original
+      const orig = originalRows[idx+1] || [];
+      const row = [];
+      row[0] = orig[0] || '';
+      row[1] = orig[1] || '';
+      row[2] = tutor.id || '';
+      row[3] = tutor.name || '';
+      row[4] = tutor.grade || '';
+      // Subjects: F-L (columns 5-11)
+      for (let i = 0; i < 7; i++) {
+        row[5+i] = tutor.subjects && tutor.subjects[i] ? tutor.subjects[i] : '';
+      }
+      newRows.push(row);
+    });
+    const worksheet = XLSX.utils.aoa_to_sheet(newRows);
+    const newWorkbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(newWorkbook, worksheet, sheetName);
+    XLSX.writeFile(newWorkbook, XLSX_PATH);
   } catch (err) {
     console.error('Error saving tutors to .xlsx:', err);
   }
