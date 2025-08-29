@@ -24,13 +24,6 @@ Grade: 12
 Awesome! Now:
 Download that cleaned up spreadsheet as a .xlsx and put it in the same folder as this file.
 Name it to tutors.xlsx (Replace the old one if there is one)
-Run convert.exe
-It should open a terminal that shows that everything is working
-    If that doesn't work for some reason, get someone who knows Computer Science to use the main.rs in convert/src
-    (Note: The path files will be different because they are configured for the .exe, not the .rs)
-        If that doesn't work, run the Convert.py in this folder
-
-IF, FOR SOME REASON, NONE OF THE ABOVE WORKS, YOU CAN ALWAYS EDIT THE TUTORS.JSON DIRECTLY IN TUTORINGBOARD/BACKEND/DATA
 
 Great! That part's done. Now:
 Add all photos to frontend/photos with the exact naming style of: [Full Name].jpeg
