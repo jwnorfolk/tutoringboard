@@ -128,23 +128,29 @@ app.get('/photos/:filename', (req, res) => {
 const lastSeen = {};
 
 // Auto-logout checker (every 30 seconds)
-setInterval(() => {
-  const now = Date.now();
-  const tutors = loadTutors();
-  let updated = false;
 
-  tutors.forEach(tutor => {
-    if (tutor.available && lastSeen[tutor.id] && now - lastSeen[tutor.id] > 30000) {
-      console.log(`[AutoLogout] Tutor ${tutor.id} timed out`);
-      tutor.available = false;
-      updated = true;
+// Auto-logout everyone at midnight server time
+function scheduleMidnightLogout() {
+  const now = new Date();
+  const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+  const msUntilMidnight = nextMidnight - now;
+  setTimeout(() => {
+    const tutors = loadTutors();
+    let updated = false;
+    tutors.forEach(tutor => {
+      if (tutor.available) {
+        tutor.available = false;
+        updated = true;
+      }
+    });
+    if (updated) {
+      saveTutors(tutors);
+      console.log('[AutoLogout] All tutors logged out at midnight');
     }
-  });
-
-  if (updated) {
-    saveTutors(tutors);
-  }
-}, 30000);
+    scheduleMidnightLogout(); // Schedule next midnight
+  }, msUntilMidnight);
+}
+scheduleMidnightLogout();
 
 // ---------------------------
 // API Routes
