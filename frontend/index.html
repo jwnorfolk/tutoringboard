@@ -134,7 +134,6 @@ h2 {
     justify-items: center;       /* center the single card */
   }
   .tutor-card {
-    width: 90%; /* relative to column, optional */
     max-width: 320px;
   }
 }
@@ -959,13 +958,13 @@ button.close:hover {
     tutorGrid.innerHTML = '';
     tutors.forEach(tutor => {
       const card = document.createElement('div');
-      card.className = `tutor-card ${tutor.available ? 'available' : 'unavailable'}`;
-      card.innerHTML = `
-        <img src="photos/${tutor.photo}" alt="${tutor.name}" />
-        <div class="tutor-grade-badge">${tutor.grade || 'N/A'}</div>
-        <div class="tutor-info">${tutor.name}</div>
-        <div class="tutor-status">${tutor.available ? 'Available' : 'Unavailable'}</div>
-      `;
+        card.className = `tutor-card ${tutor.available ? 'available' : 'unavailable'}`;
+        card.innerHTML = `
+          <img src="photos/${tutor.photo}" alt="${tutor.name}" />
+          <div class="tutor-info">${tutor.name} (${tutor.grade || 'N/A'})</div>
+          <div class="tutor-status">${tutor.available ? 'Available' : 'Unavailable'}</div>
+          <!-- <div class='tutor-grade-badge'>${tutor.grade || ''}</div> -->
+        `;
       card.addEventListener('click', () => openTutorModal(tutor));
       tutorGrid.appendChild(card);
     });
