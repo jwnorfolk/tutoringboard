@@ -86,7 +86,8 @@ h2 {
 /* GRID */
 #tutorGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* more tiles per row */
+  grid-template-columns: repeat(auto-fit, minmax(180px, 240px)); /* limit max tile width */
+  justify-content: center; /* center tiles if few */
   gap: 1.2rem; /* more space between tiles */
   margin-top: 1rem;
   width: 100%;
@@ -956,15 +957,15 @@ button.close:hover {
     });
 
     tutorGrid.innerHTML = '';
-    tutors.forEach(tutor => {
+    tutors.filter(tutor => tutor.available).forEach(tutor => {
       const card = document.createElement('div');
-        card.className = `tutor-card ${tutor.available ? 'available' : 'unavailable'}`;
-        card.innerHTML = `
-          <img src="photos/${tutor.photo}" alt="${tutor.name}" />
-          <div class="tutor-info">${tutor.name} (${tutor.grade || 'N/A'})</div>
-          <div class="tutor-status">${tutor.available ? 'Available' : 'Unavailable'}</div>
-          <!-- <div class='tutor-grade-badge'>${tutor.grade || ''}</div> -->
-        `;
+      card.className = `tutor-card available`;
+      card.innerHTML = `
+        <img src="photos/${tutor.photo}" alt="${tutor.name}" />
+        <div class="tutor-info">${tutor.name} (${tutor.grade || 'N/A'})</div>
+        <div class="tutor-status">Available</div>
+        <!-- <div class='tutor-grade-badge'>${tutor.grade || ''}</div> -->
+      `;
       card.addEventListener('click', () => openTutorModal(tutor));
       tutorGrid.appendChild(card);
     });
