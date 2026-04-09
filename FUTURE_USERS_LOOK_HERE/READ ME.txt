@@ -7,27 +7,32 @@ If you really need edit access to the spreadsheet or form, try me at:
 jstruman4929@gmail.com
 25248@dlshs.org
 
-To add new members:
-The code takes a .xlsx as input
-Use this spreadsheet: https://docs.google.com/spreadsheets/d/1joM6MCoYlLEAECO8ZX5gaFIihZcE1B6KllFUBWn4HEo/edit?usp=sharing
-The spreadsheet updates with data from: https://docs.google.com/forms/d/e/1FAIpQLSf5QZvASTbjcioVojLkgkVvgy2fcxwyH7aWAEUybLnVyHdWDg/viewform?usp=dialog
-Since you don't have edit access to the spreadsheet, make a copy.
-Delete all old submissions (they should be ordered chronologically, so delete any chunks from past years)
-Clean all the data to match this example (Make sure to check what people put for "other" for subjects and delete that if necessary):
-ID: 12345
-Full Name: Joshua Truman (Make sure this name matches the [Full Name] used for the photo)
-                        (i.e. if you have "Josh Di-Truman" as response,
-                         make sure the photo is named "Josh Di-Truman", 
-                         not "Josh Di Truman" nor "josh Di-Truman" nor
-                         "Di-Truman" nor "Josh")
-Grade: 12
-Awesome! Now:
-Download that cleaned up spreadsheet as a .xlsx and put it in the same folder as this file.
-Name it to tutors.xlsx (Replace the old one if there is one)
+To update the tutoring board:
 
-Great! That part's done. Now:
-Add all photos to frontend/photos with the exact naming style of: [Full Name].jpeg
+1. Collect tutor data using this Google Form: https://docs.google.com/forms/d/e/1FAIpQLSf5QZvASTbjcioVojLkgkVvgy2fcxwyH7aWAEUybLnVyHdWDg/viewform?usp=dialog
 
-Once all that is done, push to origin on GitHub desktop
-The website should auto update
+2. Access the responses in this Google Sheet: https://docs.google.com/spreadsheets/d/1joM6MCoYlLEAECO8ZX5gaFIihZcE1B6KllFUBWn4HEo/edit?usp=sharing
+   - Make a copy, do not edit the main file directly please.
+   In this new copy of the main file:
+    - Delete old submissions (keep only current tutors).
+    - Clean the data to match this format:
+        - ID: Unique student ID (e.g., 12345)
+        - Full Name: Exact name as it should appear (e.g., Joshua Truman)
+        - Grade: Current grade (e.g., 12)
+        - Subjects: Comma-separated list (e.g., Math, Science, English)
+    - Ensure names match exactly for photo matching.
+
+3. Download the copied and cleaned google sheet as a .xlsx file.
+
+4. Log into the admin panel on the website and upload the .xlsx file. THIS ACTION IS IRREVERSIBLE AND WILL WIPE ALL OLD TUTOR DATA.
+
+5. Prepare photos:
+   - IMPORTANT: Each photo MUST be named EXACTLY as [Full Name].jpeg (e.g., "Joshua Truman.jpeg")
+   - The name must match the "Full Name" column in the spreadsheet exactly, including capitalization and spacing.
+   - Supported formats: .jpeg, .jpg, .png (but upload as .jpeg for consistency)
+   - If a name has special characters or is not exact, the photo will not display.
+   - Place all photos in a single folder for upload.
+   - Upload the photos via the admin panel
+   - THIS ACTION IS ALSO IRREVERSIBLE AND WILL WIPE ALL OLD PHOTO DATA.
+   - After uploading, if any files are missing/incorrectly named, an error will show that asks lists the proper files that need to exist in the folder.
 

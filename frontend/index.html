@@ -375,6 +375,36 @@ button.close:hover {
   outline: none;
 }
 
+.upload-warning {
+  color: #842029;
+  background: #f8d7da;
+  border: 1px solid #f5c2c7;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+.upload-status {
+  font-size: 0.95rem;
+  color: #0f3e1f;
+}
+
+.upload-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.upload-row input[type="file"] {
+  width: 100%;
+  border-radius: 12px;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid #0f3e1f;
+  background: #f7f9fc;
+}
+
 /* Tutor List Container */
 #adminTutorList {
   max-height: 320px;
@@ -516,6 +546,7 @@ button.close:hover {
   <div id="adminContent">
   <button id="adminLogoutBtn" class="admin-logout-clear" title="Logout Admin">Log Out</button>
     <h2>Admin Panel</h2>
+    <button id="instructionsBtn" class="admin-btn" style="margin-bottom:1rem;">Instructions</button>
 
   <input id="adminTutorSearch" type="text" placeholder="Search tutors by name..." style="width:100%;margin-bottom:0.7rem;padding:0.5rem 0.7rem;font-size:1rem;border-radius:7px;border:1px solid #ccc;" />
     <div id="adminTutorList"></div>
@@ -527,12 +558,52 @@ button.close:hover {
     <input id="newTutorId" placeholder="Student ID" required />
   </div>
   <div class="add-tutor-row">
-    <input id="newTutorPhoto" placeholder="Photo filename (e.g. alice.jpg)" required />
     <input id="newTutorGrade" placeholder="Grade (e.g. 11)" required />
+  </div>
+  <div class="upload-warning" style="margin-bottom:1rem;">
+    Tutor photos are assigned automatically from the tutor name and must be uploaded using the photo folder upload below.
   </div>
   <input id="newTutorSubjects" class="add-tutor-row" placeholder="Subjects (comma separated)" required />
   <button type="submit">Add Tutor</button>
 </form>
+
+  <div id="uploadSection" style="margin-top:2rem; text-align:left;">
+    <h3>Upload Tutor Data</h3>
+    <p class="upload-warning">Uploading a new .xlsx file will replace the current tutor workbook and erase existing tutor records. Uploading a photo folder will delete all existing photos and replace them with the new image set.</p>
+    <div class="upload-row">
+      <input id="xlsxUpload" type="file" accept=".xlsx" />
+    </div>
+    <button id="uploadXlsxBtn" class="admin-btn" type="button">Upload .xlsx Workbook</button>
+    <div class="upload-row" style="margin-top:1rem;">
+      <input id="photoUpload" type="file" accept=".jpg,.jpeg,.png" webkitdirectory directory multiple />
+    </div>
+    <div class="upload-warning" style="margin-bottom:0.5rem; font-size:0.9rem;">
+      Photos must be named exactly as [Tutor Full Name].jpeg (e.g., "Joshua Truman.jpeg"). Names must match the spreadsheet exactly.
+    </div>
+    <button id="uploadPhotosBtn" class="admin-btn" type="button">Upload Photo Folder</button>
+    <div id="uploadStatus" class="upload-status" style="margin-top:0.8rem; min-height:1.2rem;"></div>
+  </div>
+
+  </div>
+</div>
+
+<!-- Instructions Modal -->
+<div id="instructionsModal" class="modal">
+  <div class="modal-content" style="max-width:600px; max-height:80vh; overflow-y:auto;">
+    <button class="close" onclick="closeInstructionsModal()">&times;</button>
+    <h2>Admin Instructions</h2>
+    <pre id="instructionsContent" style="white-space:pre-wrap; font-family:inherit; font-size:0.95rem;"></pre>
+  </div>
+</div>
+
+<!-- Missing Photos Modal -->
+<div id="missingPhotosModal" class="modal">
+  <div class="modal-content" style="max-width:500px;">
+    <button class="close" onclick="closeMissingPhotosModal()">&times;</button>
+    <h2>Missing Photos</h2>
+    <p>The following tutors are missing photos:</p>
+    <ul id="missingPhotosList"></ul>
+    <button onclick="closeMissingPhotosModal()">OK</button>
   </div>
 </div>
 
@@ -562,16 +633,26 @@ button.close:hover {
 </div>
 
 <style>
-/* Tutor Edit Modal (overlays admin window) */
-#editTutorModal {
+/* Instructions Modal */
+#instructionsModal {
   display: none;
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.65);
+  background: rgba(0,0,0,0.55);
   z-index: 4000;
   justify-content: center;
   align-items: center;
-  animation: fadeIn 0.25s ease forwards;
+}
+
+/* Missing Photos Modal */
+#missingPhotosModal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 4000;
+  justify-content: center;
+  align-items: center;
 }
 
 #editTutorModal .modal-content {
@@ -750,11 +831,11 @@ button.close:hover {
       <input type="text" id="editTutorName" placeholder="Name" />
       <input type="text" id="editTutorGrade" placeholder="Grade" />
     </div>
-    <div class="add-tutor-row">
+    <div class="add-tutor-row" style="align-items:center;">
       <input type="text" id="editTutorId" placeholder="Student ID" />
-      <input type="text" id="editTutorPhoto" placeholder="Photo filename (e.g. alice.jpg)" />
       <img id="editTutorPreview" src="" alt="Tutor Photo Preview" style="width:48px; height:48px; border-radius:50%; object-fit:cover; margin-left:0.5rem;" />
     </div>
+    <div class="upload-warning" style="margin-top:0.25rem; font-size:0.92rem;">Photo filenames are automatically derived from the tutor name.</div>
   <textarea id="editTutorSubjects" class="add-tutor-row" placeholder="Subjects (comma separated)" style="height:5em;width:90%;resize:vertical;font-size:1.05rem;padding:0.7rem 1rem;"></textarea>
     <div class="add-tutor-row" style="justify-content: flex-end;">
     </div>
@@ -869,9 +950,18 @@ button.close:hover {
   const addTutorForm = document.getElementById('addTutorForm');
   const newTutorName = document.getElementById('newTutorName');
   const newTutorId = document.getElementById('newTutorId');
-  const newTutorPhoto = document.getElementById('newTutorPhoto');
   const newTutorGrade = document.getElementById('newTutorGrade');
   const newTutorSubjects = document.getElementById('newTutorSubjects');
+  const xlsxUploadInput = document.getElementById('xlsxUpload');
+  const uploadXlsxBtn = document.getElementById('uploadXlsxBtn');
+  const photoUploadInput = document.getElementById('photoUpload');
+  const uploadPhotosBtn = document.getElementById('uploadPhotosBtn');
+  const uploadStatus = document.getElementById('uploadStatus');
+  const instructionsBtn = document.getElementById('instructionsBtn');
+  const instructionsModal = document.getElementById('instructionsModal');
+  const instructionsContent = document.getElementById('instructionsContent');
+  const missingPhotosModal = document.getElementById('missingPhotosModal');
+  const missingPhotosList = document.getElementById('missingPhotosList');
 
   const tutorModal = document.getElementById('tutorModal');
   const closeTutorModal = document.getElementById('closeTutorModal');
@@ -1066,6 +1156,51 @@ button.close:hover {
     adminModal.style.display = 'none';
   });
 
+  instructionsBtn.addEventListener('click', async () => {
+    try {
+      const res = await fetch('/api/instructions');
+      if (res.ok) {
+        const text = await res.text();
+        instructionsContent.textContent = text;
+        instructionsModal.style.display = 'flex';
+      } else {
+        alert('Failed to load instructions.');
+      }
+    } catch (err) {
+      alert('Error loading instructions.');
+    }
+  });
+
+  function closeInstructionsModal() {
+    instructionsModal.style.display = 'none';
+  }
+
+  async function checkMissingPhotos() {
+    const res = await fetch('/api/tutors');
+    if (!res.ok) return;
+    const tutors = await res.json();
+    const missing = [];
+    for (const tutor of tutors) {
+      const photoName = `${tutor.name}.jpeg`;
+      try {
+        const photoRes = await fetch(`/photos/${photoName}`, { method: 'HEAD' });
+        if (!photoRes.ok) {
+          missing.push(tutor.name);
+        }
+      } catch {
+        missing.push(tutor.name);
+      }
+    }
+    if (missing.length > 0) {
+      missingPhotosList.innerHTML = missing.map(name => `<li>${name}.jpeg</li>`).join('');
+      missingPhotosModal.style.display = 'flex';
+    }
+  }
+
+  function closeMissingPhotosModal() {
+    missingPhotosModal.style.display = 'none';
+  }
+
   function renderAdminTutorList(tutors) {
     allAdminTutors = tutors;
     updateAdminTutorList();
@@ -1130,24 +1265,86 @@ button.close:hover {
 
   document.getElementById('adminTutorSearch').addEventListener('input', updateAdminTutorList);
 
+  function setUploadStatus(message, isError = false) {
+    uploadStatus.textContent = message;
+    uploadStatus.style.color = isError ? '#b71c1c' : '#0f3e1f';
+  }
+
+  uploadXlsxBtn.addEventListener('click', async () => {
+    if (!xlsxUploadInput.files.length) {
+      setUploadStatus('Please select an .xlsx file before uploading.', true);
+      return;
+    }
+
+    if (!confirm('Uploading a new .xlsx will replace all current tutor data. Continue?')) {
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('tutorFile', xlsxUploadInput.files[0]);
+    setUploadStatus('Uploading workbook...', false);
+
+    const res = await fetch('/api/upload-tutors', {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await res.json();
+    if (res.ok && data.success) {
+      setUploadStatus('Workbook uploaded successfully. Refreshing tutors...', false);
+      xlsxUploadInput.value = '';
+      fetchTutors();
+    } else {
+      setUploadStatus(data.message || 'Workbook upload failed.', true);
+      alert(data.message || 'Workbook upload failed.');
+    }
+  });
+
+  uploadPhotosBtn.addEventListener('click', async () => {
+    if (!photoUploadInput.files.length) {
+      setUploadStatus('Please select a photo folder before uploading.', true);
+      return;
+    }
+
+    const formData = new FormData();
+    Array.from(photoUploadInput.files).forEach(file => formData.append('photos', file));
+    setUploadStatus('Uploading photo folder...', false);
+
+    const res = await fetch('/api/upload-photos', {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await res.json();
+    if (res.ok && data.success) {
+      setUploadStatus('Photo folder uploaded successfully.', false);
+      photoUploadInput.value = '';
+      if (adminLoggedIn) {
+        fetchTutors();
+        checkMissingPhotos();
+      }
+    } else {
+      setUploadStatus(data.message || 'Photo upload failed.', true);
+      alert(data.message || 'Photo upload failed.');
+    }
+  });
+
   addTutorForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = newTutorName.value.trim();
     const id = newTutorId.value.trim();
-    const photo = newTutorPhoto.value.trim();
     const grade = newTutorGrade.value.trim();
     const subjects = newTutorSubjects.value.split(',').map(s => s.trim()).filter(Boolean);
 
     const res = await fetch('/api/add-tutor', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, id, photo, grade, subjects })
+      body: JSON.stringify({ name, id, grade, subjects })
     });
 
     if(res.ok) {
       newTutorName.value = '';
       newTutorId.value = '';
-      newTutorPhoto.value = '';
       newTutorGrade.value = '';
       newTutorSubjects.value = '';
       fetchTutors();
@@ -1182,7 +1379,6 @@ const editModal = document.getElementById("editTutorModal");
 const editName = document.getElementById("editTutorName");
 const editGrade = document.getElementById("editTutorGrade");
 const editSubjects = document.getElementById("editTutorSubjects");
-const editPhoto = document.getElementById("editTutorPhoto");
 const editPreview = document.getElementById("editTutorPreview");
 const saveBtn = document.getElementById("saveTutorBtn");
 const cancelBtn = document.getElementById("cancelTutorBtn");
@@ -1197,23 +1393,10 @@ function openEditTutor(tutor) {
   document.getElementById('editTutorName').value = tutor.name || "";
   document.getElementById('editTutorGrade').value = tutor.grade || "";
   document.getElementById('editTutorId').value = tutor.id || "";
-  document.getElementById('editTutorPhoto').value = tutor.photo || "";
   document.getElementById('editTutorSubjects').value = Array.isArray(tutor.subjects) ? tutor.subjects.join(", ") : "";
   document.getElementById('editTutorPreview').src = tutor.photo ? `photos/${tutor.photo}` : "";
   editModal.style.display = "flex";
 }
-
-// Update preview when a new photo is selected
-editPhoto.addEventListener("change", (e) => {
-  const file = e.target.files[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = () => {
-      editPreview.src = reader.result;
-    };
-    reader.readAsDataURL(file);
-  }
-});
 
 // Save changes (send to backend)
 saveBtn.addEventListener("click", async () => {
@@ -1222,13 +1405,12 @@ saveBtn.addEventListener("click", async () => {
   const name = document.getElementById('editTutorName').value;
   const grade = document.getElementById('editTutorGrade').value;
   const subjects = document.getElementById('editTutorSubjects').value.split(",").map(s => s.trim()).filter(Boolean);
-  const photo = document.getElementById('editTutorPhoto').value;
   const originalId = currentEditingOriginalId;
 
   const res = await fetch('/api/edit-tutor', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, name, grade, subjects, photo, originalId })
+    body: JSON.stringify({ id, name, grade, subjects, originalId })
   });
   if (res.ok) {
     editModal.style.display = "none";

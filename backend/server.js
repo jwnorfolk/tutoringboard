@@ -3,13 +3,36 @@ const express = require('express');
 const XLSX = require('xlsx');
 const fs = require('fs');
 const path = require('path');
+const multer = require('multer');
 const app = express();
 
-const AdminPassword = process.env.ADMIN_PASSWORD;
+//const AdminPassword = process.env.ADMIN_PASSWORD;
+const AdminPassword = "a";
 
 const XLSX_PATH = path.join(__dirname, '..', 'FUTURE_USERS_LOOK_HERE', 'tutors.xlsx');
 const PHOTO_DIR = path.join(__dirname, '..', 'frontend', 'photos');
 const PASSWORD_FILE = path.join(__dirname, '..', 'FUTURE_USERS_LOOK_HERE', 'adminpassword.txt');
+
+const upload = multer({ storage: multer.memoryStorage() });
+
+const photoUpload = multer({
+  storage: multer.diskStorage({
+    destination: PHOTO_DIR,
+    filename: (req, file, cb) => {
+      const safeName = path.basename(file.originalname);
+      cb(null, safeName);
+    }
+  }),
+  fileFilter: (req, file, cb) => {
+    const allowed = /\.(jpe?g|png)$/i;
+    if (allowed.test(file.originalname)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only JPG, JPEG and PNG images are allowed.'));
+    }
+  },
+  limits: { fileSize: 20 * 1024 * 1024 }
+});
 
 app.use(express.json());
 
@@ -156,6 +179,12 @@ scheduleMidnightLogout();
 // API Routes
 // ---------------------------
 
+// Get instructions
+app.get('/api/instructions', (req, res) => {
+  const readmePath = path.join(__dirname, '..', 'FUTURE_USERS_LOOK_HERE', 'READ ME.txt');
+  res.sendFile(readmePath);
+});
+
 // Get all tutors
 app.get('/api/tutors', (req, res) => {
   const tutors = loadTutors();
@@ -223,8 +252,8 @@ app.post('/api/delete-tutor', (req, res) => {
 
 // Admin: add tutor
 app.post('/api/add-tutor', (req, res) => {
-  const { name, id, photo, grade, subjects } = req.body;
-  if (!name || !id || !photo) {
+  const { name, id, grade, subjects } = req.body;
+  if (!name || !id) {
     return res.status(400).json({ message: 'Missing fields' });
   }
 
@@ -233,14 +262,14 @@ app.post('/api/add-tutor', (req, res) => {
     return res.status(409).json({ message: 'Tutor with this ID already exists' });
   }
 
-  tutors.push({ name, id, photo, grade, subjects, available: false });
+  tutors.push({ name, id, grade, subjects, available: false });
   saveTutors(tutors);
   res.json({ message: 'Tutor added' });
 });
 
 // Admin: edit tutor
 app.post('/api/edit-tutor', (req, res) => {
-  const { id, name, grade, subjects, photo, originalId } = req.body;
+  const { id, name, grade, subjects, originalId } = req.body;
   let tutors = loadTutors();
   // Try to find by originalId first
   let index = tutors.findIndex(t => t.id === originalId);
@@ -259,10 +288,62 @@ app.post('/api/edit-tutor', (req, res) => {
   if (name !== undefined) tutors[index].name = name;
   if (grade !== undefined) tutors[index].grade = grade;
   if (subjects !== undefined) tutors[index].subjects = subjects;
-  if (photo !== undefined) tutors[index].photo = photo;
 
   saveTutors(tutors);
   res.json({ message: 'Tutor updated', tutor: tutors[index] });
+});
+
+// ---------------------------
+// Upload tutors workbook
+// ---------------------------
+app.post('/api/upload-tutors', upload.single('tutorFile'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'No file uploaded' });
+  }
+
+  if (!/\.xlsx$/i.test(req.file.originalname)) {
+    return res.status(400).json({ success: false, message: 'Only .xlsx files are accepted' });
+  }
+
+  try {
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+    if (!workbook.SheetNames.length) {
+      return res.status(400).json({ success: false, message: 'Uploaded workbook has no sheets' });
+    }
+    fs.writeFileSync(XLSX_PATH, req.file.buffer);
+    return res.json({ success: true, message: 'Tutor workbook uploaded successfully' });
+  } catch (err) {
+    console.error('Upload workbook error:', err);
+    return res.status(400).json({ success: false, message: 'Invalid workbook or corrupted file' });
+  }
+});
+
+// ---------------------------
+// Upload tutor photos
+// ---------------------------
+app.post('/api/upload-photos', (req, res, next) => {
+  try {
+    if (!fs.existsSync(PHOTO_DIR)) {
+      fs.mkdirSync(PHOTO_DIR, { recursive: true });
+    }
+    const existingFiles = fs.readdirSync(PHOTO_DIR);
+    existingFiles.forEach(existing => {
+      const ext = path.extname(existing).toLowerCase();
+      if (['.jpg', '.jpeg', '.png'].includes(ext)) {
+        fs.unlinkSync(path.join(PHOTO_DIR, existing));
+      }
+    });
+    next();
+  } catch (err) {
+    console.error('Error clearing photo folder:', err);
+    return res.status(500).json({ success: false, message: 'Could not clear photo folder' });
+  }
+}, photoUpload.array('photos'), (req, res) => {
+  if (!req.files || !req.files.length) {
+    return res.status(400).json({ success: false, message: 'No photos uploaded' });
+  }
+  const savedFiles = req.files.map(file => file.filename);
+  res.json({ success: true, message: 'Photos uploaded successfully', files: savedFiles });
 });
 
 // ---------------------------
@@ -283,6 +364,20 @@ app.post('/api/admin-login', (req, res) => {
   }
 });
 
+
+// ---------------------------
+// Global error handler
+// ---------------------------
+app.use((err, req, res, next) => {
+  console.error('Server error:', err);
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({ success: false, message: err.message });
+  }
+  if (err.message) {
+    return res.status(400).json({ success: false, message: err.message });
+  }
+  res.status(500).json({ success: false, message: 'Internal server error' });
+});
 
 // ---------------------------
 // Start Server
