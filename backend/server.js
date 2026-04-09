@@ -6,8 +6,7 @@ const path = require('path');
 const multer = require('multer');
 const app = express();
 
-//const AdminPassword = process.env.ADMIN_PASSWORD;
-const AdminPassword = "a";
+const AdminPassword = process.env.ADMIN_PASSWORD;
 
 const XLSX_PATH = path.join(__dirname, '..', 'FUTURE_USERS_LOOK_HERE', 'tutors.xlsx');
 const PHOTO_DIR = path.join(__dirname, '..', 'frontend', 'photos');
