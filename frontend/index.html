@@ -58,6 +58,8 @@ h2 { font-size: 1.6rem; margin-bottom: 1rem; border-bottom: 2px solid #d1e7dd; p
 .modal-content { background: white; border-radius: 14px; padding: 1.5rem 2rem; width: 90%; max-width: 500px; box-shadow: 0 6px 20px rgba(0,0,0,0.2); animation: slideUp 0.3s ease forwards; }
 .modal-content h3 { margin-top: 0; color: #1b4332; }
 
+/* FIX 1: tutorModal was missing display:none so it rendered as a block at the bottom */
+#tutorModal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); z-index: 2000; justify-content: center; align-items: center; animation: fadeIn 0.25s ease forwards; }
 #tutorModalContent { max-height: 80vh; overflow-y: auto; text-align: center; position: relative; background: white; border-radius: 14px; padding: 1.5rem 2rem; width: 90%; max-width: 500px; box-shadow: 0 6px 20px rgba(0,0,0,0.2); animation: slideUp 0.3s ease forwards; }
 #tutorModalContent img { width: 100%; height: auto; max-height: 500px; border-radius: 10px; margin-bottom: 1rem; object-fit: cover; object-position: 50% 30%; }
 #closeTutorModal { position: absolute; top: 12px; right: 15px; width: 32px; height: 32px; border-radius: 50%; background: #f44336; color: white; border: none; font-size: 1.5rem; line-height: 32px; text-align: center; cursor: pointer; z-index: 10; transition: background 0.2s ease; }
@@ -124,7 +126,9 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
 #passwordModal input { width: 100%; padding: 0.65rem 0.75rem; margin-bottom: 1.2rem; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; box-sizing: border-box; }
 #passwordModal form button[type="submit"] { padding: 0.55rem 1.2rem; font-size: 1rem; font-weight: 600; color: white; border: none; border-radius: 8px; cursor: pointer; background: linear-gradient(145deg, #1e88e5, #1565c0); box-shadow: 0 4px 6px rgba(0,0,0,0.15); }
 #passwordModal .close { position: absolute; top: 12px; right: 15px; width: 32px; height: 32px; border-radius: 50%; background: #f44336; color: white; border: none; font-size: 1.5rem; line-height: 32px; text-align: center; cursor: pointer; }
-#editTutorModal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); justify-content: center; align-items: center; }
+
+/* FIX 2: editTutorModal needs a higher z-index than adminModal (3000) */
+#editTutorModal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); z-index: 4000; justify-content: center; align-items: center; }
 #editTutorContent { background: #ffffff; border-radius: 14px; padding: 2rem; width: 90%; max-width: 400px; box-shadow: 0 6px 20px rgba(0,0,0,0.2); animation: slideUp 0.3s ease forwards; text-align: center; }
 #editTutorContent input { width: 100%; padding: 0.45rem 0.9rem; margin-bottom: 1rem; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
 
@@ -177,7 +181,7 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
 
     <div id="uploadSection" style="margin-top:2rem; text-align:left;">
       <h3>Upload Tutor Data</h3>
-      <p class="upload-warning">Uploading a new .xlsx file will replace the current tutor workbook and erase existing tutor records. Uploading a photo folder will delete all existing photos and replace them with the new image set.</p>
+      <p class="upload-warning">Uploading a new .xlsx file will replace the current tutor workbook and erase existing tutor records.</p>
       <div class="upload-row">
         <input id="xlsxUpload" type="file" accept=".xlsx" />
       </div>
@@ -191,15 +195,27 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
         </button>
       </div>
 
+      <!-- FIX 3: Photo upload no longer clears existing photos; added separate Clear All button -->
       <div style="margin-top:1.5rem;">
-        <h3 style="margin-bottom:0.5rem;">Or Upload Photos Manually</h3>
-        <div class="upload-row">
-          <input id="photoUpload" type="file" accept=".jpg,.jpeg,.png" webkitdirectory directory multiple />
+        <h3 style="margin-bottom:0.5rem;">Upload Photos Manually</h3>
+        <p style="font-size:0.85rem;color:#555;margin:0 0 0.5rem;">
+          Select individual files or an entire folder. New photos are <strong>added alongside</strong> existing ones — existing photos are not deleted.
+        </p>
+        <div class="upload-row" style="margin-bottom:0.5rem;">
+          <!-- No webkitdirectory so it accepts both files and folders via the button below -->
+          <input id="photoUpload" type="file" accept=".jpg,.jpeg,.png" multiple />
         </div>
-        <div class="upload-warning" style="margin-bottom:0.5rem; font-size:0.9rem;">
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem;">
+          <button id="uploadPhotosBtn" class="admin-btn" type="button">Upload Photos</button>
+          <label style="cursor:pointer;">
+            <input id="photoFolderUpload" type="file" accept=".jpg,.jpeg,.png" webkitdirectory directory multiple style="display:none;" />
+            <span class="admin-btn" style="display:inline-block;">Upload Folder</span>
+          </label>
+          <button id="clearPhotosBtn" class="admin-btn" type="button" style="background:#f44336;color:white;">🗑 Clear All Photos</button>
+        </div>
+        <div class="upload-warning" style="font-size:0.9rem;">
           Photos must be named exactly as [Tutor Full Name].jpeg
         </div>
-        <button id="uploadPhotosBtn" class="admin-btn" type="button">Upload Photo Folder</button>
       </div>
 
       <div id="uploadStatus" class="upload-status" style="margin-top:0.8rem; min-height:1.2rem;"></div>
@@ -242,11 +258,11 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
 
 <!-- Missing Photos Modal -->
 <div id="missingPhotosModal" class="modal">
-  <div class="modal-content" style="max-width:500px;">
+  <div class="modal-content" style="max-width:500px; max-height:80vh; display:flex; flex-direction:column;">
     <button class="close" onclick="closeMissingPhotosModal()">&times;</button>
     <h2>Missing Photos</h2>
     <p>The following tutors are missing photos:</p>
-    <ul id="missingPhotosList"></ul>
+    <ul id="missingPhotosList" style="overflow-y:auto; flex:1; margin:0 0 1rem; padding-left:1.5rem;"></ul>
     <button onclick="closeMissingPhotosModal()">OK</button>
   </div>
 </div>
@@ -324,7 +340,9 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
   const xlsxUploadInput = document.getElementById('xlsxUpload');
   const uploadXlsxBtn = document.getElementById('uploadXlsxBtn');
   const photoUploadInput = document.getElementById('photoUpload');
+  const photoFolderUploadInput = document.getElementById('photoFolderUpload');
   const uploadPhotosBtn = document.getElementById('uploadPhotosBtn');
+  const clearPhotosBtn = document.getElementById('clearPhotosBtn');
   const uploadStatus = document.getElementById('uploadStatus');
   const instructionsBtn = document.getElementById('instructionsBtn');
   const instructionsModal = document.getElementById('instructionsModal');
@@ -574,19 +592,38 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
     }
   });
 
-  uploadPhotosBtn.addEventListener('click', async () => {
-    if (!photoUploadInput.files.length) { setUploadStatus('Please select a photo folder.', true); return; }
+  // FIX 3: Shared upload helper — appends photos, does not clear
+  async function uploadPhotoFiles(files) {
+    if (!files.length) { setUploadStatus('Please select photos before uploading.', true); return; }
     const formData = new FormData();
-    Array.from(photoUploadInput.files).forEach(file => formData.append('photos', file));
-    setUploadStatus('Uploading photo folder...', false);
+    Array.from(files).forEach(file => formData.append('photos', file));
+    setUploadStatus('Uploading photos...', false);
     const res = await fetch('/api/upload-photos', { method: 'POST', body: formData });
     const data = await res.json();
     if (res.ok && data.success) {
-      setUploadStatus('Photo folder uploaded successfully.', false);
+      setUploadStatus(`${data.files.length} photo(s) uploaded successfully.`, false);
       photoUploadInput.value = '';
+      photoFolderUploadInput.value = '';
       if (adminLoggedIn) { fetchTutors(); checkMissingPhotos(); }
     } else {
       setUploadStatus(data.message || 'Photo upload failed.', true);
+    }
+  }
+
+  uploadPhotosBtn.addEventListener('click', () => uploadPhotoFiles(photoUploadInput.files));
+
+  photoFolderUploadInput.addEventListener('change', () => uploadPhotoFiles(photoFolderUploadInput.files));
+
+  clearPhotosBtn.addEventListener('click', async () => {
+    if (!confirm('This will permanently delete ALL tutor photos from the server. Are you sure?')) return;
+    setUploadStatus('Clearing all photos...', false);
+    const res = await fetch('/api/clear-photos', { method: 'POST' });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      setUploadStatus('All photos cleared.', false);
+      if (adminLoggedIn) fetchTutors();
+    } else {
+      setUploadStatus(data.message || 'Failed to clear photos.', true);
     }
   });
 
@@ -619,7 +656,6 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
   const syncForm        = document.getElementById('syncForm');
 
   document.getElementById('openSchoologySync').addEventListener('click', () => {
-    // Reset state
     syncLog.style.display = 'none';
     syncLog.textContent = '';
     syncProgressBar.style.display = 'none';
@@ -668,7 +704,7 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
-        buffer = lines.pop(); // keep incomplete line
+        buffer = lines.pop();
 
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue;

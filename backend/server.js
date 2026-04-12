@@ -102,21 +102,47 @@ function saveTutors(tutors) {
 app.get('/photos/:filename', (req, res) => {
   const requestedFile = req.params.filename;
   const baseName = path.basename(requestedFile, path.extname(requestedFile));
-  const nameWords = baseName.split(/\s+/).filter(Boolean);
   const extensions = ['.jpg', '.jpeg', '.png'];
-  const candidates = [];
-  for (const ext of extensions) candidates.push(baseName + ext);
-  for (const word of nameWords) {
+
+  // Generate a list of name variants to try, in priority order
+  function getVariants(name) {
+    const variants = [];
+    const words = name.split(/\s+/).filter(Boolean);
+
+    // 1. Exact name as given
+    variants.push(name);
+
+    // 2. Strip punctuation (hyphens, apostrophes, periods)
+    const stripped = name.replace(/[-'.]/g, '');
+    if (stripped !== name) variants.push(stripped);
+
+    // 3. First + last only (drop middle names), e.g. "John Michael Smith" -> "John Smith"
+    if (words.length > 2) {
+      const firstLast = `${words[0]} ${words[words.length - 1]}`;
+      variants.push(firstLast);
+      // Also strip punctuation from first+last
+      const firstLastStripped = firstLast.replace(/[-'.]/g, '');
+      if (firstLastStripped !== firstLast) variants.push(firstLastStripped);
+    }
+
+    // 4. Lowercase versions of all the above
+    const withLower = [];
+    for (const v of variants) withLower.push(v, v.toLowerCase());
+
+    // Deduplicate while preserving order
+    return [...new Set(withLower)];
+  }
+
+  const variants = getVariants(baseName);
+
+  for (const variant of variants) {
     for (const ext of extensions) {
-      candidates.push(`${word}${ext}`);
-      candidates.push(`${word.toLowerCase()}${ext}`);
+      const candidatePath = path.join(PHOTO_DIR, variant + ext);
+      if (fs.existsSync(candidatePath)) return res.sendFile(candidatePath);
     }
   }
-  for (const candidate of candidates) {
-    const candidatePath = path.join(PHOTO_DIR, candidate);
-    if (fs.existsSync(candidatePath)) return res.sendFile(candidatePath);
-  }
-  console.error(`[PhotoError] No photo found for ${baseName}`);
+
+  console.error(`[PhotoError] No photo found for ${baseName} (tried: ${variants.join(', ')})`);
   res.status(404).send('Photo not found');
 });
 
@@ -249,23 +275,35 @@ app.post('/api/upload-tutors', upload.single('tutorFile'), (req, res) => {
   }
 });
 
+// Upload photos — appends to existing photos, does NOT clear first
 app.post('/api/upload-photos', (req, res, next) => {
   try {
     if (!fs.existsSync(PHOTO_DIR)) fs.mkdirSync(PHOTO_DIR, { recursive: true });
-    const existingFiles = fs.readdirSync(PHOTO_DIR);
-    existingFiles.forEach(existing => {
-      const ext = path.extname(existing).toLowerCase();
-      if (['.jpg', '.jpeg', '.png'].includes(ext)) fs.unlinkSync(path.join(PHOTO_DIR, existing));
-    });
     next();
   } catch (err) {
-    console.error('Error clearing photo folder:', err);
-    return res.status(500).json({ success: false, message: 'Could not clear photo folder' });
+    console.error('Error creating photo folder:', err);
+    return res.status(500).json({ success: false, message: 'Could not create photo folder' });
   }
 }, photoUpload.array('photos'), (req, res) => {
   if (!req.files || !req.files.length) return res.status(400).json({ success: false, message: 'No photos uploaded' });
   const savedFiles = req.files.map(file => file.filename);
   res.json({ success: true, message: 'Photos uploaded successfully', files: savedFiles });
+});
+
+// Clear all photos
+app.post('/api/clear-photos', (req, res) => {
+  try {
+    if (!fs.existsSync(PHOTO_DIR)) return res.json({ success: true, message: 'No photos to clear' });
+    const files = fs.readdirSync(PHOTO_DIR);
+    files.forEach(file => {
+      const ext = path.extname(file).toLowerCase();
+      if (['.jpg', '.jpeg', '.png'].includes(ext)) fs.unlinkSync(path.join(PHOTO_DIR, file));
+    });
+    res.json({ success: true, message: 'All photos cleared' });
+  } catch (err) {
+    console.error('Error clearing photos:', err);
+    res.status(500).json({ success: false, message: 'Failed to clear photos' });
+  }
 });
 
 app.post('/api/admin-login', (req, res) => {
