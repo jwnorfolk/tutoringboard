@@ -40,6 +40,14 @@ app.use(express.static(path.join(__dirname, '..', 'frontend')));
 // ---------------------------
 // Tutor JSON Helpers
 // ---------------------------
+function normalizePhotoFilename(filename, name) {
+  let photoFilename = String(filename || '').trim();
+  if (!photoFilename) return name ? `${name}.jpeg` : '';
+  if (!path.extname(photoFilename)) photoFilename += '.jpeg';
+  if (!isAllowedPhotoFile(photoFilename)) return name ? `${name}.jpeg` : '';
+  return photoFilename;
+}
+
 function loadTutors() {
   try {
     const workbook = XLSX.readFile(XLSX_PATH);
@@ -56,8 +64,9 @@ function loadTutors() {
       const grade = row[4] ? String(row[4]).trim() : '';
       const subjects = row.slice(5, 12).filter(Boolean).map(s => String(s).trim());
       const available = row[12] === true || row[12] === 'true' || row[12] === '1';
-      const photo = name ? `${name}.jpeg` : '';
-      tutors.push({ name, id, photo, grade, subjects, available });
+      const photoFilename = normalizePhotoFilename(row[13], name);
+      const photo = photoFilename || (name ? `${name}.jpeg` : '');
+      tutors.push({ name, id, photoFilename, photo, grade, subjects, available });
     });
     return tutors;
   } catch (err) {
@@ -71,7 +80,8 @@ function saveTutors(tutors) {
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
     const originalRows = XLSX.utils.sheet_to_json(sheet, {header:1});
-    const header = originalRows[0];
+    const header = originalRows[0] || [];
+    if (header.length < 14) header[13] = header[13] || 'Photo Filename';
     const newRows = [header];
     tutors.forEach((tutor, idx) => {
       const orig = originalRows[idx+1] || [];
@@ -85,6 +95,7 @@ function saveTutors(tutors) {
         row[5+i] = tutor.subjects && tutor.subjects[i] ? tutor.subjects[i] : '';
       }
       row[12] = tutor.available ? 'true' : 'false';
+      row[13] = normalizePhotoFilename(tutor.photoFilename, tutor.name);
       newRows.push(row);
     });
     const worksheet = XLSX.utils.aoa_to_sheet(newRows);
@@ -233,17 +244,17 @@ app.post('/api/delete-tutor', (req, res) => {
 });
 
 app.post('/api/add-tutor', (req, res) => {
-  const { name, id, grade, subjects } = req.body;
+  const { name, id, grade, subjects, photoFilename } = req.body;
   if (!name || !id) return res.status(400).json({ message: 'Missing fields' });
   let tutors = loadTutors();
   if (tutors.some(t => t.id === id)) return res.status(409).json({ message: 'Tutor with this ID already exists' });
-  tutors.push({ name, id, grade, subjects, available: false });
+  tutors.push({ name, id, grade, subjects, photoFilename: normalizePhotoFilename(photoFilename, name), available: false });
   saveTutors(tutors);
   res.json({ message: 'Tutor added' });
 });
 
 app.post('/api/edit-tutor', (req, res) => {
-  const { id, name, grade, subjects, originalId } = req.body;
+  const { id, name, grade, subjects, photoFilename, originalId } = req.body;
   let tutors = loadTutors();
   let index = tutors.findIndex(t => t.id === originalId);
   if (index === -1 && name) {
@@ -257,6 +268,7 @@ app.post('/api/edit-tutor', (req, res) => {
   if (name !== undefined) tutors[index].name = name;
   if (grade !== undefined) tutors[index].grade = grade;
   if (subjects !== undefined) tutors[index].subjects = subjects;
+  if (photoFilename !== undefined) tutors[index].photoFilename = normalizePhotoFilename(photoFilename, tutors[index].name || name);
   saveTutors(tutors);
   res.json({ message: 'Tutor updated', tutor: tutors[index] });
 });
@@ -291,6 +303,17 @@ app.post('/api/upload-photos', (req, res, next) => {
 });
 
 // Clear all photos
+function sanitizePhotoFilename(filename) {
+  if (!filename || typeof filename !== 'string') return '';
+  const safe = path.basename(filename).replace(/[/\\]/g, '').trim();
+  return safe;
+}
+
+function isAllowedPhotoFile(filename) {
+  const ext = path.extname(filename).toLowerCase();
+  return ['.jpg', '.jpeg', '.png'].includes(ext);
+}
+
 app.post('/api/clear-photos', (req, res) => {
   try {
     if (!fs.existsSync(PHOTO_DIR)) return res.json({ success: true, message: 'No photos to clear' });
@@ -303,6 +326,64 @@ app.post('/api/clear-photos', (req, res) => {
   } catch (err) {
     console.error('Error clearing photos:', err);
     res.status(500).json({ success: false, message: 'Failed to clear photos' });
+  }
+});
+
+app.get('/api/photos-list', (req, res) => {
+  try {
+    if (!fs.existsSync(PHOTO_DIR)) return res.json([]);
+    const files = fs.readdirSync(PHOTO_DIR)
+      .filter(filename => isAllowedPhotoFile(filename))
+      .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+    res.json(files);
+  } catch (err) {
+    console.error('Error listing photos:', err);
+    res.status(500).json({ success: false, message: 'Failed to list photos' });
+  }
+});
+
+app.post('/api/delete-photo', (req, res) => {
+  const filename = sanitizePhotoFilename(req.body.filename);
+  if (!filename || !isAllowedPhotoFile(filename)) return res.status(400).json({ success: false, message: 'Invalid filename' });
+  const filePath = path.join(PHOTO_DIR, filename);
+  if (!fs.existsSync(filePath)) return res.status(404).json({ success: false, message: 'Photo not found' });
+  try {
+    fs.unlinkSync(filePath);
+    res.json({ success: true, message: 'Photo deleted' });
+  } catch (err) {
+    console.error('Error deleting photo:', err);
+    res.status(500).json({ success: false, message: 'Failed to delete photo' });
+  }
+});
+
+app.post('/api/rename-photo', (req, res) => {
+  const oldName = sanitizePhotoFilename(req.body.oldName);
+  let newNameInput = String(req.body.newName || '').trim();
+  if (!oldName || !newNameInput) return res.status(400).json({ success: false, message: 'Invalid filename' });
+
+  const oldPath = path.join(PHOTO_DIR, oldName);
+  if (!fs.existsSync(oldPath)) return res.status(404).json({ success: false, message: 'Original photo not found' });
+
+  const oldExt = path.extname(oldName).toLowerCase();
+  let newName = path.basename(newNameInput);
+  const newExt = path.extname(newName).toLowerCase();
+  if (!newExt) {
+    newName += oldExt;
+  } else if (!isAllowedPhotoFile(newName)) {
+    return res.status(400).json({ success: false, message: 'New filename must keep a JPG/JPEG/PNG extension' });
+  }
+  if (!isAllowedPhotoFile(newName)) {
+    return res.status(400).json({ success: false, message: 'Invalid new filename' });
+  }
+
+  const newPath = path.join(PHOTO_DIR, sanitizePhotoFilename(newName));
+  if (fs.existsSync(newPath)) return res.status(409).json({ success: false, message: 'A photo with that name already exists' });
+  try {
+    fs.renameSync(oldPath, newPath);
+    res.json({ success: true, message: 'Photo renamed', newName: path.basename(newPath) });
+  } catch (err) {
+    console.error('Error renaming photo:', err);
+    res.status(500).json({ success: false, message: 'Failed to rename photo' });
   }
 });
 

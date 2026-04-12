@@ -26,13 +26,5 @@ To update the tutoring board:
 
 4. Log into the admin panel on the website and upload the .xlsx file. THIS ACTION IS IRREVERSIBLE AND WILL WIPE ALL OLD TUTOR DATA.
 
-5. Prepare photos:
-   - IMPORTANT: Each photo MUST be named EXACTLY as [Full Name].jpeg (e.g., "Joshua Truman.jpeg")
-   - The name must match the "Full Name" column in the spreadsheet exactly, including capitalization and spacing.
-   - Supported formats: .jpeg, .jpg, .png (but upload as .jpeg for consistency)
-   - If a name has special characters or is not exact, the photo will not display.
-   - Place all photos in a single folder for upload.
-   - Upload the photos via the admin panel
-   - THIS ACTION IS ALSO IRREVERSIBLE AND WILL WIPE ALL OLD PHOTO DATA.
-   - After uploading, if any files are missing/incorrectly named, an error will show that asks lists the proper files that need to exist in the folder.
-
+5. Update the photos
+    I created a fancy program to scrape the photos off of schoology, but there's a good chance that it will break. If it does, create a folder that contains all the photos of the tutors. Make sure to name each file the properly capitilized full name of the tutor (ex. Joshua Truman, not Josh Truman, joshua truman nor JoshuaTruman). If a few student's photos do not automatically match up, edit the tutor profile and change the photo filename to match.

@@ -75,7 +75,7 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
 #adminContent h2, #adminContent h3 { color: #1b4332; margin-bottom: 1.5rem; }
 #adminContent input { width: 100%; padding: 0.65rem 0.85rem; margin-bottom: 1.2rem; border: 1px solid #0f3e1f; border-radius: 12px; font-size: 1rem; transition: border-color 0.25s, box-shadow 0.25s; box-sizing: border-box; }
 #adminContent input:focus { border-color: #0f3e1f; box-shadow: 0 0 8px rgba(15,62,31,0.25); outline: none; }
-.upload-warning { color: #842029; background: #f8d7da; border: 1px solid #f5c2c7; padding: 0.75rem 1rem; border-radius: 12px; margin-bottom: 1rem; font-size: 0.95rem; }
+.upload-warning { color: #6b5222; background: #fff3cd; border: 1px solid #ffecb5; padding: 0.75rem 1rem; border-radius: 12px; margin-bottom: 1rem; font-size: 0.95rem; }
 .upload-status { font-size: 0.95rem; color: #0f3e1f; }
 .upload-row { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
 .upload-row input[type="file"] { width: 100%; border-radius: 12px; padding: 0.7rem 0.85rem; border: 1px solid #0f3e1f; background: #f7f9fc; }
@@ -111,6 +111,7 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
 /* Other modals */
 #instructionsModal, #missingPhotosModal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); z-index: 4000; justify-content: center; align-items: center; }
 #tutorLoginModal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); z-index: 3000; justify-content: center; align-items: center; animation: fadeIn 0.25s ease forwards; }
+#photoManagerModal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); z-index: 5000; justify-content: center; align-items: center; }
 #tutorLoginModal .modal-content { background: linear-gradient(135deg, #ffffff, #f0f4f8); border-radius: 14px; padding: 2rem 2.5rem; width: 90%; max-width: 400px; box-shadow: 0 6px 20px rgba(0,0,0,0.2); position: relative; animation: slideUp 0.3s ease forwards; text-align: center; }
 #tutorLoginModal h3 { margin-bottom: 1.5rem; color: #1b4332; font-size: 1.4rem; }
 #tutorLoginModal input { width: 100%; padding: 0.65rem 0.75rem; margin-bottom: 1.2rem; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; box-sizing: border-box; }
@@ -158,7 +159,7 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
   <div id="adminContent">
     <button id="adminLogoutBtn" class="admin-logout-clear" title="Logout Admin">Log Out</button>
     <h2>Admin Panel</h2>
-    <button id="instructionsBtn" class="admin-btn" style="margin-bottom:1rem;">Instructions</button>
+    <div style="height:1px;">&nbsp;</div>
 
     <input id="adminTutorSearch" type="text" placeholder="Search tutors by name..." style="width:100%;margin-bottom:0.7rem;padding:0.5rem 0.7rem;font-size:1rem;border-radius:7px;border:1px solid #ccc;" />
     <div id="adminTutorList"></div>
@@ -173,19 +174,23 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
         <input id="newTutorGrade" placeholder="Grade (e.g. 11)" required />
       </div>
       <div class="upload-warning" style="margin-bottom:1rem;">
-        Tutor photos are assigned automatically from the tutor name.
+        Tutor photos are assigned automatically from the tutor name if not filled out.
       </div>
+      <input id="newTutorPhotoFilename" class="add-tutor-row" placeholder="Photo filename (optional)" />
       <input id="newTutorSubjects" class="add-tutor-row" placeholder="Subjects (comma separated)" required />
       <button type="submit">Add Tutor</button>
     </form>
 
     <div id="uploadSection" style="margin-top:2rem; text-align:left;">
       <h3>Upload Tutor Data</h3>
-      <p class="upload-warning">Uploading a new .xlsx file will replace the current tutor workbook and erase existing tutor records.</p>
+      <p class="upload-warning">Uploading a new .xlsx file will replace the current tutor spreadsheet and erase existing tutor records.</p>
       <div class="upload-row">
         <input id="xlsxUpload" type="file" accept=".xlsx" />
       </div>
-      <button id="uploadXlsxBtn" class="admin-btn" type="button">Upload .xlsx Workbook</button>
+      <div style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;">
+        <button id="uploadXlsxBtn" class="admin-btn" type="button">Upload .xlsx Spreadsheet</button>
+        <button id="instructionsBtn" class="admin-btn" type="button">Instructions</button>
+      </div>
 
       <div style="margin-top:1.5rem;">
         <h3 style="margin-bottom:0.5rem;">Sync Photos from Schoology</h3>
@@ -207,6 +212,7 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
         </div>
         <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem;">
           <button id="uploadPhotosBtn" class="admin-btn" type="button">Upload Photos</button>
+          <button id="managePhotosBtn" class="admin-btn" type="button" style="background:#1b4332;color:white;">Manage Photos</button>
           <label style="cursor:pointer;">
             <input id="photoFolderUpload" type="file" accept=".jpg,.jpeg,.png" webkitdirectory directory multiple style="display:none;" />
             <span class="admin-btn" style="display:inline-block;">Upload Folder</span>
@@ -267,6 +273,18 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
   </div>
 </div>
 
+<!-- Photo Manager Modal -->
+<div id="photoManagerModal" class="modal">
+  <div class="modal-content" id="photoManagerContent" style="max-width:760px; max-height:85vh; overflow-y:auto; position:relative;">
+    <button class="close" id="photoManagerClose">&times;</button>
+    <h2>Manage System Photos</h2>
+    <p style="color:#555;margin-bottom:1rem;">View every photo file stored in the system and rename or delete it directly.</p>
+    <input id="photoManagerSearch" type="text" placeholder="Filter photos by filename..." style="width:100%;margin-bottom:1rem;padding:0.6rem 0.85rem;font-size:1rem;border-radius:10px;border:1px solid #ccc;box-sizing:border-box;" />
+    <div id="photoListContainer" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;"></div>
+    <div id="photoManagerEmpty" style="color:#555;font-size:0.95rem;margin-top:1rem;display:none;">No photos found.</div>
+  </div>
+</div>
+
 <!-- Tutor Info Modal -->
 <div id="tutorModal">
   <div id="tutorModalContent">
@@ -315,7 +333,8 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
       <input type="text" id="editTutorId" placeholder="Student ID" />
       <img id="editTutorPreview" src="" alt="Tutor Photo Preview" style="width:48px;height:48px;border-radius:50%;object-fit:cover;margin-left:0.5rem;" />
     </div>
-    <div class="upload-warning" style="margin-top:0.25rem;font-size:0.92rem;">Photo filenames are automatically derived from the tutor name.</div>
+    <input type="text" id="editTutorPhotoFilename" placeholder="Photo filename (optional)" style="width:90%;margin:0 auto 1rem;display:block;padding:0.45rem 0.9rem;border-radius:8px;border:1px solid #ccc;box-sizing:border-box;" />
+    <div class="upload-warning" style="margin-top:0.25rem;font-size:0.92rem;">Photo filenames are automatically derived from the tutor name if not filled out.</div>
     <textarea id="editTutorSubjects" class="add-tutor-row" placeholder="Subjects (comma separated)" style="height:5em;width:90%;resize:vertical;font-size:1.05rem;padding:0.7rem 1rem;"></textarea>
     <div style="display:flex;justify-content:center;gap:0.7rem;margin-top:1.2rem;">
       <button id="cancelTutorBtn" class="admin-btn" type="button">Cancel</button>
@@ -336,6 +355,7 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
   const newTutorName = document.getElementById('newTutorName');
   const newTutorId = document.getElementById('newTutorId');
   const newTutorGrade = document.getElementById('newTutorGrade');
+  const newTutorPhotoFilename = document.getElementById('newTutorPhotoFilename');
   const newTutorSubjects = document.getElementById('newTutorSubjects');
   const xlsxUploadInput = document.getElementById('xlsxUpload');
   const uploadXlsxBtn = document.getElementById('uploadXlsxBtn');
@@ -349,6 +369,12 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
   const instructionsContent = document.getElementById('instructionsContent');
   const missingPhotosModal = document.getElementById('missingPhotosModal');
   const missingPhotosList = document.getElementById('missingPhotosList');
+  const managePhotosBtn = document.getElementById('managePhotosBtn');
+  const photoManagerModal = document.getElementById('photoManagerModal');
+  const photoManagerSearch = document.getElementById('photoManagerSearch');
+  const photoListContainer = document.getElementById('photoListContainer');
+  const photoManagerEmpty = document.getElementById('photoManagerEmpty');
+  const photoManagerClose = document.getElementById('photoManagerClose');
   const tutorModal = document.getElementById('tutorModal');
   const closeTutorModalBtn = document.getElementById('closeTutorModal');
   const modalPhoto = document.getElementById('modalPhoto');
@@ -411,8 +437,9 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
     tutors.forEach(tutor => {
       const card = document.createElement('div');
       card.className = `tutor-card ${tutor.available ? 'available' : 'unavailable'}`;
+      const photoSrc = tutor.photoFilename || tutor.photo;
       card.innerHTML = `
-        <img src="photos/${tutor.photo}" alt="${tutor.name}" />
+        <img src="photos/${photoSrc}" alt="${tutor.name}" />
         <div class="tutor-info">${tutor.name} (${tutor.grade || 'N/A'})</div>
         <div class="tutor-status">${tutor.available ? 'Available' : 'Unavailable'}</div>
       `;
@@ -423,7 +450,8 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
   }
 
   function openTutorModal(tutor) {
-    modalPhoto.src = `photos/${tutor.photo}`;
+    const photoSrc = tutor.photoFilename || tutor.photo;
+    modalPhoto.src = `photos/${photoSrc}`;
     modalPhoto.alt = tutor.name;
     modalName.textContent = tutor.name;
     modalGrade.textContent = `Grade: ${tutor.grade || 'N/A'}`;
@@ -530,6 +558,100 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
 
   function closeMissingPhotosModal() { missingPhotosModal.style.display = 'none'; }
 
+  let photoManagerPhotos = [];
+  async function fetchPhotoManagerPhotos() {
+    try {
+      const res = await fetch('/api/photos-list');
+      if (!res.ok) throw new Error('Failed to load photo list');
+      photoManagerPhotos = await res.json();
+      renderPhotoManagerList();
+    } catch (err) {
+      photoListContainer.innerHTML = '<div style="color:#b71c1c;">Unable to load photos.</div>';
+      photoManagerEmpty.style.display = 'none';
+    }
+  }
+
+  function renderPhotoManagerList() {
+    const filter = photoManagerSearch.value.trim().toLowerCase();
+    const list = photoManagerPhotos.filter(name => name.toLowerCase().includes(filter));
+    photoListContainer.innerHTML = '';
+    if (!list.length) {
+      photoManagerEmpty.style.display = 'block';
+      return;
+    }
+    photoManagerEmpty.style.display = 'none';
+    list.forEach(filename => {
+      const item = document.createElement('div');
+      item.style.cssText = 'background:#f7f9fc;border:1px solid #ccc;border-radius:14px;padding:1rem;display:flex;flex-direction:column;gap:0.75rem;';
+      const thumb = document.createElement('img');
+      thumb.src = `/photos/${encodeURIComponent(filename)}`;
+      thumb.alt = filename;
+      thumb.style.cssText = 'width:100%;height:140px;object-fit:cover;border-radius:12px;';
+      const label = document.createElement('div');
+      label.textContent = filename;
+      label.style.cssText = 'font-weight:600;color:#1b4332;word-break:break-word;';
+      const controls = document.createElement('div');
+      controls.style.cssText = 'display:flex;gap:0.5rem;flex-wrap:wrap;justify-content:flex-end;';
+      const renameBtn = document.createElement('button');
+      renameBtn.className = 'admin-btn';
+      renameBtn.textContent = 'Rename';
+      renameBtn.addEventListener('click', async () => {
+        const base = filename.replace(/\.[^.]+$/, '');
+        const newName = prompt('Rename photo file:', base);
+        if (!newName || newName.trim() === '' || newName.trim() === base) return;
+        const sanitized = newName.trim();
+        const res = await fetch('/api/rename-photo', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ oldName: filename, newName: sanitized })
+        });
+        if (res.ok) {
+          await fetchPhotoManagerPhotos();
+          fetchTutors();
+        } else {
+          const data = await res.json();
+          alert(data.message || 'Rename failed');
+        }
+      });
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'admin-btn';
+      deleteBtn.style.background = '#f44336';
+      deleteBtn.style.color = 'white';
+      deleteBtn.textContent = 'Delete';
+      deleteBtn.addEventListener('click', async () => {
+        if (!confirm(`Delete ${filename}? This cannot be undone.`)) return;
+        const res = await fetch('/api/delete-photo', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename })
+        });
+        if (res.ok) {
+          await fetchPhotoManagerPhotos();
+          fetchTutors();
+        } else {
+          const data = await res.json();
+          alert(data.message || 'Delete failed');
+        }
+      });
+      controls.append(renameBtn, deleteBtn);
+      item.append(thumb, label, controls);
+      photoListContainer.appendChild(item);
+    });
+  }
+
+  function openPhotoManager() {
+    photoManagerModal.style.display = 'flex';
+    photoManagerSearch.value = '';
+    fetchPhotoManagerPhotos();
+  }
+
+  function closePhotoManager() {
+    photoManagerModal.style.display = 'none';
+  }
+
+  photoManagerClose.addEventListener('click', closePhotoManager);
+  photoManagerModal.addEventListener('click', e => { if (e.target === photoManagerModal) closePhotoManager(); });
+  photoManagerSearch.addEventListener('input', renderPhotoManagerList);
+  managePhotosBtn.addEventListener('click', openPhotoManager);
+
   function renderAdminTutorList(tutors) { allAdminTutors = tutors; updateAdminTutorList(); }
 
   function updateAdminTutorList() {
@@ -537,7 +659,7 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
     const filtered = allAdminTutors.filter(t => t.name.toLowerCase().includes(searchValue));
     adminTutorList.innerHTML = filtered.map(tutor => `
       <div class="admin-tutor">
-        <img src="photos/${tutor.photo}" alt="${tutor.name}" />
+        <img src="photos/${tutor.photoFilename || tutor.photo}" alt="${tutor.name}" />
         <div class="admin-tutor-name">${tutor.name} (${tutor.id})</div>
         <button class="admin-btn edit" data-id="${tutor.id}">Edit</button>
         <button class="admin-btn toggle-availability" data-id="${tutor.id}">${tutor.available ? 'Set Unavailable' : 'Set Available'}</button>
@@ -632,13 +754,17 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
     const name = newTutorName.value.trim();
     const id = newTutorId.value.trim();
     const grade = newTutorGrade.value.trim();
+    const photoFilenameInput = newTutorPhotoFilename.value.trim();
+    let photoFilename = photoFilenameInput;
+    if (photoFilename === '' && name) photoFilename = `${name}.jpeg`;
+    if (photoFilename && !/\.[^.]+$/.test(photoFilename)) photoFilename += '.jpeg';
     const subjects = newTutorSubjects.value.split(',').map(s => s.trim()).filter(Boolean);
     const res = await fetch('/api/add-tutor', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, id, grade, subjects })
+      body: JSON.stringify({ name, id, grade, subjects, photoFilename })
     });
     if (res.ok) {
-      newTutorName.value = ''; newTutorId.value = ''; newTutorGrade.value = ''; newTutorSubjects.value = '';
+      newTutorName.value = ''; newTutorId.value = ''; newTutorGrade.value = ''; newTutorPhotoFilename.value = ''; newTutorSubjects.value = '';
       fetchTutors();
     } else {
       alert('Failed to add tutor');
@@ -750,6 +876,7 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
   const editModal = document.getElementById('editTutorModal');
   const saveBtn   = document.getElementById('saveTutorBtn');
   const cancelBtn = document.getElementById('cancelTutorBtn');
+  const editTutorPhotoFilename = document.getElementById('editTutorPhotoFilename');
   let currentEditingTutor = null;
   let currentEditingOriginalId = null;
 
@@ -759,8 +886,9 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
     document.getElementById('editTutorName').value = tutor.name || '';
     document.getElementById('editTutorGrade').value = tutor.grade || '';
     document.getElementById('editTutorId').value = tutor.id || '';
+    document.getElementById('editTutorPhotoFilename').value = tutor.photoFilename || tutor.photo || '';
     document.getElementById('editTutorSubjects').value = Array.isArray(tutor.subjects) ? tutor.subjects.join(', ') : '';
-    document.getElementById('editTutorPreview').src = tutor.photo ? `photos/${tutor.photo}` : '';
+    document.getElementById('editTutorPreview').src = (tutor.photoFilename || tutor.photo) ? `photos/${tutor.photoFilename || tutor.photo}` : '';
     editModal.style.display = 'flex';
   }
 
@@ -769,10 +897,14 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
     const id       = document.getElementById('editTutorId').value;
     const name     = document.getElementById('editTutorName').value;
     const grade    = document.getElementById('editTutorGrade').value;
+    const photoFilenameInput = document.getElementById('editTutorPhotoFilename').value.trim();
+    let photoFilename = photoFilenameInput;
+    if (photoFilename === '' && name) photoFilename = `${name}.jpeg`;
+    if (photoFilename && !/\.[^.]+$/.test(photoFilename)) photoFilename += '.jpeg';
     const subjects = document.getElementById('editTutorSubjects').value.split(',').map(s => s.trim()).filter(Boolean);
     const res = await fetch('/api/edit-tutor', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, name, grade, subjects, originalId: currentEditingOriginalId })
+      body: JSON.stringify({ id, name, grade, subjects, photoFilename, originalId: currentEditingOriginalId })
     });
     if (res.ok) { editModal.style.display = 'none'; fetchTutors(); }
     else { const data = await res.json(); alert(data.message || 'Failed to update tutor'); }
