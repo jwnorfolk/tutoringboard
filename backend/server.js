@@ -464,14 +464,35 @@ app.post('/api/sync-schoology-photos', async (req, res) => {
     }
 
     send('log', { message: '🚀 Starting browser...' });
+    const launchOptions = {
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--disable-extensions',
+        '--disable-background-networking',
+        '--disable-background-timer-throttling',
+        '--disable-client-side-phishing-detection',
+        '--disable-default-apps',
+        '--disable-sync',
+        '--disable-translate',
+        '--hide-scrollbars',
+        '--mute-audio',
+        '--no-first-run',
+        '--safebrowsing-disable-auto-update'
+      ],
+      timeout: 30000
+    };
     try {
-      browser = await chromium.launch({ headless: true });
+      browser = await chromium.launch(launchOptions);
     } catch (launchError) {
       const launchMessage = String(launchError.message || '');
-      if (launchMessage.includes('Executable doesn\'t exist') || launchMessage.includes('download new browsers') || launchMessage.includes('Playwright was just installed') ) {
+      if (launchMessage.includes('Executable doesn\'t exist') || launchMessage.includes('download new browsers') || launchMessage.includes('Playwright was just installed')) {
         send('log', { message: '⚙️ Chromium not found. Installing browser runtime before retry...' });
         await ensureChromiumInstalled();
-        browser = await chromium.launch({ headless: true });
+        browser = await chromium.launch(launchOptions);
       } else {
         throw launchError;
       }
