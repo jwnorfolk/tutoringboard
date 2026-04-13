@@ -3,8 +3,24 @@ const express = require('express');
 const XLSX = require('xlsx');
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 const multer = require('multer');
 const app = express();
+
+let playwrightInstallPromise = null;
+function ensureChromiumInstalled() {
+  if (playwrightInstallPromise) return playwrightInstallPromise;
+  playwrightInstallPromise = new Promise((resolve, reject) => {
+    try {
+      console.log('Installing Playwright Chromium browser at runtime...');
+      execSync('npx playwright install chromium', { stdio: 'inherit' });
+      resolve();
+    } catch (err) {
+      reject(err);
+    }
+  });
+  return playwrightInstallPromise;
+}
 
 const AdminPassword = process.env.ADMIN_PASSWORD;
 
@@ -13,6 +29,9 @@ const PHOTO_DIR = path.join(__dirname, '..', 'frontend', 'photos');
 const PASSWORD_FILE = path.join(__dirname, '..', 'FUTURE_USERS_LOOK_HERE', 'adminpassword.txt');
 
 const upload = multer({ storage: multer.memoryStorage() });
+
+let tutorsCache = null;
+let tutorsCacheMtime = 0;
 
 const photoUpload = multer({
   storage: multer.diskStorage({
@@ -50,6 +69,12 @@ function normalizePhotoFilename(filename, name) {
 
 function loadTutors() {
   try {
+    const stats = fs.statSync(XLSX_PATH);
+    const mtime = stats.mtimeMs;
+    if (tutorsCache && tutorsCacheMtime === mtime) {
+      return JSON.parse(JSON.stringify(tutorsCache));
+    }
+
     const workbook = XLSX.readFile(XLSX_PATH);
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
@@ -68,7 +93,9 @@ function loadTutors() {
       const photo = photoFilename || (name ? `${name}.jpeg` : '');
       tutors.push({ name, id, photoFilename, photo, grade, subjects, available });
     });
-    return tutors;
+    tutorsCache = tutors;
+    tutorsCacheMtime = mtime;
+    return JSON.parse(JSON.stringify(tutorsCache));
   } catch (err) {
     return [];
   }
@@ -102,6 +129,8 @@ function saveTutors(tutors) {
     const newWorkbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(newWorkbook, worksheet, sheetName);
     XLSX.writeFile(newWorkbook, XLSX_PATH);
+    tutorsCache = JSON.parse(JSON.stringify(tutors));
+    tutorsCacheMtime = fs.statSync(XLSX_PATH).mtimeMs;
   } catch (err) {
     console.error('Error saving tutors to .xlsx:', err);
   }
@@ -280,6 +309,8 @@ app.post('/api/upload-tutors', upload.single('tutorFile'), (req, res) => {
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
     if (!workbook.SheetNames.length) return res.status(400).json({ success: false, message: 'Uploaded workbook has no sheets' });
     fs.writeFileSync(XLSX_PATH, req.file.buffer);
+    tutorsCache = null;
+    tutorsCacheMtime = 0;
     return res.json({ success: true, message: 'Tutor workbook uploaded successfully' });
   } catch (err) {
     console.error('Upload workbook error:', err);
@@ -433,7 +464,18 @@ app.post('/api/sync-schoology-photos', async (req, res) => {
     }
 
     send('log', { message: '🚀 Starting browser...' });
-    browser = await chromium.launch({ headless: true });
+    try {
+      browser = await chromium.launch({ headless: true });
+    } catch (launchError) {
+      const launchMessage = String(launchError.message || '');
+      if (launchMessage.includes('Executable doesn\'t exist') || launchMessage.includes('download new browsers') || launchMessage.includes('Playwright was just installed') ) {
+        send('log', { message: '⚙️ Chromium not found. Installing browser runtime before retry...' });
+        await ensureChromiumInstalled();
+        browser = await chromium.launch({ headless: true });
+      } else {
+        throw launchError;
+      }
+    }
     const context = await browser.newContext({
       userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36'
     });

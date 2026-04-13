@@ -439,7 +439,7 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
       card.className = `tutor-card ${tutor.available ? 'available' : 'unavailable'}`;
       const photoSrc = tutor.photoFilename || tutor.photo;
       card.innerHTML = `
-        <img src="photos/${photoSrc}" alt="${tutor.name}" />
+        <img src="photos/${encodeURIComponent(photoSrc)}" alt="${tutor.name}" />
         <div class="tutor-info">${tutor.name} (${tutor.grade || 'N/A'})</div>
         <div class="tutor-status">${tutor.available ? 'Available' : 'Unavailable'}</div>
       `;
@@ -451,7 +451,7 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
 
   function openTutorModal(tutor) {
     const photoSrc = tutor.photoFilename || tutor.photo;
-    modalPhoto.src = `photos/${photoSrc}`;
+    modalPhoto.src = `photos/${encodeURIComponent(photoSrc)}`;
     modalPhoto.alt = tutor.name;
     modalName.textContent = tutor.name;
     modalGrade.textContent = `Grade: ${tutor.grade || 'N/A'}`;
@@ -543,13 +543,22 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
     const res = await fetch('/api/tutors');
     if (!res.ok) return;
     const tutors = await res.json();
-    const missing = [];
-    for (const tutor of tutors) {
+
+    const checks = tutors.map(async tutor => {
+      const fileToCheck = tutor.photoFilename || `${tutor.name}.jpeg`;
       try {
-        const photoRes = await fetch(`/photos/${tutor.name}.jpeg`, { method: 'HEAD' });
-        if (!photoRes.ok) missing.push(tutor.name);
-      } catch { missing.push(tutor.name); }
-    }
+        const photoRes = await fetch(`/photos/${encodeURIComponent(fileToCheck)}`, { method: 'HEAD' });
+        return photoRes.ok ? null : tutor.name;
+      } catch {
+        return tutor.name;
+      }
+    });
+
+    const results = await Promise.allSettled(checks);
+    const missing = results
+      .filter(r => r.status === 'fulfilled' && r.value)
+      .map(r => r.value);
+
     if (missing.length > 0) {
       missingPhotosList.innerHTML = missing.map(name => `<li>${name}.jpeg</li>`).join('');
       missingPhotosModal.style.display = 'flex';
@@ -659,7 +668,7 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
     const filtered = allAdminTutors.filter(t => t.name.toLowerCase().includes(searchValue));
     adminTutorList.innerHTML = filtered.map(tutor => `
       <div class="admin-tutor">
-        <img src="photos/${tutor.photoFilename || tutor.photo}" alt="${tutor.name}" />
+        <img src="photos/${encodeURIComponent(tutor.photoFilename || tutor.photo)}" alt="${tutor.name}" />
         <div class="admin-tutor-name">${tutor.name} (${tutor.id})</div>
         <button class="admin-btn edit" data-id="${tutor.id}">Edit</button>
         <button class="admin-btn toggle-availability" data-id="${tutor.id}">${tutor.available ? 'Set Unavailable' : 'Set Available'}</button>
@@ -888,7 +897,7 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
     document.getElementById('editTutorId').value = tutor.id || '';
     document.getElementById('editTutorPhotoFilename').value = tutor.photoFilename || tutor.photo || '';
     document.getElementById('editTutorSubjects').value = Array.isArray(tutor.subjects) ? tutor.subjects.join(', ') : '';
-    document.getElementById('editTutorPreview').src = (tutor.photoFilename || tutor.photo) ? `photos/${tutor.photoFilename || tutor.photo}` : '';
+    document.getElementById('editTutorPreview').src = (tutor.photoFilename || tutor.photo) ? `photos/${encodeURIComponent(tutor.photoFilename || tutor.photo)}` : '';
     editModal.style.display = 'flex';
   }
 
