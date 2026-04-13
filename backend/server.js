@@ -7,20 +7,45 @@ const { execSync } = require('child_process');
 const multer = require('multer');
 const app = express();
 
-let playwrightInstallPromise = null;
+// ---------------------------
+// Playwright / Chromium Setup
+// ---------------------------
+// On Render, we must install Chromium at startup (not lazily) because:
+//  - The filesystem is ephemeral; we can't rely on a cached install from postinstall
+//  - Lazy installs during a request often time out or fail silently
+// We run this once, synchronously, before the server starts accepting traffic.
 function ensureChromiumInstalled() {
-  if (playwrightInstallPromise) return playwrightInstallPromise;
-  playwrightInstallPromise = new Promise((resolve, reject) => {
-    try {
-      console.log('Installing Playwright Chromium browser at runtime...');
-      execSync('npx playwright install chromium', { stdio: 'inherit' });
-      resolve();
-    } catch (err) {
-      reject(err);
+  try {
+    // Check if chromium is already available
+    const playwright = require('playwright');
+    const executablePath = playwright.chromium.executablePath();
+    if (fs.existsSync(executablePath)) {
+      console.log('[Chromium] Already installed at:', executablePath);
+      return;
     }
-  });
-  return playwrightInstallPromise;
+  } catch (_) {
+    // executablePath() throws if not installed — fall through to install
+  }
+
+  console.log('[Chromium] Not found. Installing now (this may take a minute)...');
+  try {
+    execSync('npx playwright install chromium --with-deps', {
+      stdio: 'inherit',
+      timeout: 120_000,
+      env: {
+        ...process.env,
+        // Tell Playwright where to cache browsers on Render's writable filesystem
+        PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || '/opt/render/.cache/ms-playwright',
+      }
+    });
+    console.log('[Chromium] Installation complete.');
+  } catch (err) {
+    console.error('[Chromium] Installation failed:', err.message);
+    // Don't crash the server — Schoology sync will return a friendly error if Chromium is missing
+  }
 }
+
+ensureChromiumInstalled();
 
 const AdminPassword = process.env.ADMIN_PASSWORD;
 
@@ -144,32 +169,20 @@ app.get('/photos/:filename', (req, res) => {
   const baseName = path.basename(requestedFile, path.extname(requestedFile));
   const extensions = ['.jpg', '.jpeg', '.png'];
 
-  // Generate a list of name variants to try, in priority order
   function getVariants(name) {
     const variants = [];
     const words = name.split(/\s+/).filter(Boolean);
-
-    // 1. Exact name as given
     variants.push(name);
-
-    // 2. Strip punctuation (hyphens, apostrophes, periods)
     const stripped = name.replace(/[-'.]/g, '');
     if (stripped !== name) variants.push(stripped);
-
-    // 3. First + last only (drop middle names), e.g. "John Michael Smith" -> "John Smith"
     if (words.length > 2) {
       const firstLast = `${words[0]} ${words[words.length - 1]}`;
       variants.push(firstLast);
-      // Also strip punctuation from first+last
       const firstLastStripped = firstLast.replace(/[-'.]/g, '');
       if (firstLastStripped !== firstLast) variants.push(firstLastStripped);
     }
-
-    // 4. Lowercase versions of all the above
     const withLower = [];
     for (const v of variants) withLower.push(v, v.toLowerCase());
-
-    // Deduplicate while preserving order
     return [...new Set(withLower)];
   }
 
@@ -318,7 +331,6 @@ app.post('/api/upload-tutors', upload.single('tutorFile'), (req, res) => {
   }
 });
 
-// Upload photos — appends to existing photos, does NOT clear first
 app.post('/api/upload-photos', (req, res, next) => {
   try {
     if (!fs.existsSync(PHOTO_DIR)) fs.mkdirSync(PHOTO_DIR, { recursive: true });
@@ -333,7 +345,6 @@ app.post('/api/upload-photos', (req, res, next) => {
   res.json({ success: true, message: 'Photos uploaded successfully', files: savedFiles });
 });
 
-// Clear all photos
 function sanitizePhotoFilename(filename) {
   if (!filename || typeof filename !== 'string') return '';
   const safe = path.basename(filename).replace(/[/\\]/g, '').trim();
@@ -452,24 +463,52 @@ app.post('/api/sync-schoology-photos', async (req, res) => {
   const GROUP_ID = groupId  || '312025711';
   const BASE_URL = `https://${DOMAIN}`;
 
+  // Render-specific browser cache path
+  const PLAYWRIGHT_BROWSERS_PATH =
+    process.env.PLAYWRIGHT_BROWSERS_PATH || '/opt/render/.cache/ms-playwright';
+
   let browser;
   try {
     let chromium;
     try {
       chromium = require('playwright').chromium;
     } catch (e) {
-      send('error', { message: 'Playwright is not installed. Run: npm install playwright && npx playwright install chromium' });
+      send('error', { message: 'Playwright is not installed. Run: npm install playwright' });
       res.end();
       return;
     }
 
+    // Verify the executable exists before trying to launch
+    let executablePath;
+    try {
+      executablePath = chromium.executablePath();
+      if (!fs.existsSync(executablePath)) throw new Error('not found');
+    } catch (_) {
+      // Try to install on the fly as a last resort
+      send('log', { message: '⚙️ Chromium not found — attempting install...' });
+      try {
+        execSync('npx playwright install chromium --with-deps', {
+          stdio: 'pipe',
+          timeout: 120_000,
+          env: { ...process.env, PLAYWRIGHT_BROWSERS_PATH }
+        });
+        executablePath = chromium.executablePath();
+      } catch (installErr) {
+        send('error', { message: `❌ Could not install Chromium: ${installErr.message}` });
+        res.end();
+        return;
+      }
+    }
+
     send('log', { message: '🚀 Starting browser...' });
+
     const launchOptions = {
       headless: true,
+      executablePath,                    // ← explicit path avoids lookup failures on Render
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
+        '--disable-dev-shm-usage',       // ← critical on Render (small /dev/shm)
         '--disable-gpu',
         '--disable-extensions',
         '--disable-background-networking',
@@ -481,22 +520,15 @@ app.post('/api/sync-schoology-photos', async (req, res) => {
         '--hide-scrollbars',
         '--mute-audio',
         '--no-first-run',
-        '--safebrowsing-disable-auto-update'
+        '--safebrowsing-disable-auto-update',
+        '--single-process',              // ← helps on low-memory Render instances
+        '--memory-pressure-off',
       ],
       timeout: 30000
     };
-    try {
-      browser = await chromium.launch(launchOptions);
-    } catch (launchError) {
-      const launchMessage = String(launchError.message || '');
-      if (launchMessage.includes('Executable doesn\'t exist') || launchMessage.includes('download new browsers') || launchMessage.includes('Playwright was just installed')) {
-        send('log', { message: '⚙️ Chromium not found. Installing browser runtime before retry...' });
-        await ensureChromiumInstalled();
-        browser = await chromium.launch(launchOptions);
-      } else {
-        throw launchError;
-      }
-    }
+
+    browser = await chromium.launch(launchOptions);
+
     const context = await browser.newContext({
       userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36'
     });
@@ -584,16 +616,10 @@ app.post('/api/sync-schoology-photos', async (req, res) => {
     const allProfileUrls = [];
     const seenUrls = new Set();
 
-    // ── Collect members by clicking Schoology's AJAX "Next" div ──
-    // Schoology renders pagination as:
-    //   <div class="next sEnrollmentEditprocessed" ajax="enrollments/edit/members/group/GROUP_ID/ajax?ss=&p=2">Next</div>
-    // Clicking it replaces the member list in-place via AJAX — no page navigation occurs.
-
     const MEMBERS_URL = `${BASE_URL}/group/${GROUP_ID}/members`;
     send('log', { message: `  📄 Loading members page: ${MEMBERS_URL}` });
     await page.goto(MEMBERS_URL, { waitUntil: 'networkidle', timeout: 20000 });
 
-    // Helper: harvest all /user/<id> links currently visible on the page
     const harvestLinks = async () => {
       const links = await page.evaluate(() => {
         const anchors = Array.from(document.querySelectorAll('a[href*="/user/"]'));
@@ -621,14 +647,11 @@ app.post('/api/sync-schoology-photos', async (req, res) => {
       return newCount;
     };
 
-    // Scrape page 1
     let pageNum = 1;
     let newOnPage = await harvestLinks();
     send('log', { message: `  Page ${pageNum}: found ${newOnPage} member(s). Total: ${allProfileUrls.length}` });
 
-    // Keep clicking "Next" as long as it exists
     while (true) {
-      // The Next div Schoology uses — match on class "next" inside the enrollment pager
       const hasNext = await page.evaluate(() => {
         const el = document.querySelector('div.next[ajax], div[class*="next"][ajax]');
         return !!el;
@@ -639,19 +662,16 @@ app.post('/api/sync-schoology-photos', async (req, res) => {
         break;
       }
 
-      // Grab a snapshot of the current first member link so we can detect when the DOM updates
       const anchorBefore = await page.evaluate(() => {
         const a = document.querySelector('a[href*="/user/"]');
         return a ? a.href : null;
       });
 
-      // Click the Next div
       await page.evaluate(() => {
         const el = document.querySelector('div.next[ajax], div[class*="next"][ajax]');
         if (el) el.click();
       });
 
-      // Wait for the member list to update (first member link changes, or up to 8 s)
       try {
         await page.waitForFunction(
           (before) => {
@@ -662,7 +682,6 @@ app.post('/api/sync-schoology-photos', async (req, res) => {
           { timeout: 8000 }
         );
       } catch (_) {
-        // Timeout — content may not have changed; harvest anyway then stop
         send('log', { message: `  ⚠️  DOM did not update after clicking Next — stopping.` });
         break;
       }
@@ -676,7 +695,6 @@ app.post('/api/sync-schoology-photos', async (req, res) => {
         break;
       }
 
-      // Safety cap
       if (allProfileUrls.length >= 500) {
         send('log', { message: '  ⚠️  Reached 500-member safety cap. Stopping.' });
         break;
@@ -788,7 +806,7 @@ app.use((err, req, res, next) => {
 // ---------------------------
 // Start Server
 // ---------------------------
-const port = 3000;
+const port = process.env.PORT || 3000;
 app.listen(port, '0.0.0.0', () => {
   console.log(`Server running on port ${port}`);
 });
