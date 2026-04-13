@@ -7,8 +7,13 @@ const { execSync } = require('child_process');
 const multer = require('multer');
 const app = express();
 
+const isRenderEnvironment = !!process.env.RENDER || !!process.env.RENDER_SERVICE_ID || !!process.env.RENDER_GIT_COMMIT || !!process.env.RENDER_EXTERNAL_HOSTNAME || !!process.env.RENDER_REGION;
+
 let playwrightInstallPromise = null;
 function ensureChromiumInstalled() {
+  if (isRenderEnvironment) {
+    return Promise.resolve();
+  }
   if (playwrightInstallPromise) return playwrightInstallPromise;
   playwrightInstallPromise = new Promise((resolve, reject) => {
     try {
@@ -20,6 +25,17 @@ function ensureChromiumInstalled() {
     }
   });
   return playwrightInstallPromise;
+}
+
+function launchChromiumWithTimeout(chromium, options) {
+  const launchPromise = chromium.launch(options);
+  const timeoutPromise = new Promise((_, reject) => {
+    const timer = setTimeout(() => {
+      clearTimeout(timer);
+      reject(new Error('Playwright Chromium launch timed out'));
+    }, 20000);
+  });
+  return Promise.race([launchPromise, timeoutPromise]);
 }
 
 const AdminPassword = process.env.ADMIN_PASSWORD;
@@ -429,6 +445,243 @@ app.post('/api/admin-login', (req, res) => {
   }
 });
 
+function getAttribute(html, name) {
+  const match = html.match(new RegExp(name + '\\s*=\\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s>]+))', 'i'));
+  return match ? (match[1] || match[2] || match[3] || '') : '';
+}
+
+function extractHiddenFields(html) {
+  const fields = {};
+  const inputRegex = /<input\b[^>]*\btype=(?:"hidden"|'hidden'|hidden)[^>]*>/gi;
+  for (const inputMatch of html.matchAll(inputRegex)) {
+    const tag = inputMatch[0];
+    const name = getAttribute(tag, 'name');
+    if (!name) continue;
+    fields[name] = getAttribute(tag, 'value');
+  }
+  return fields;
+}
+
+function extractFormAction(html) {
+  const match = html.match(/<form\b[^>]*\baction=(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+  return match ? (match[1] || match[2] || match[3] || '') : '';
+}
+
+function hasSchoolField(html) {
+  return /<input\b[^>]*\bname=(?:"school"|'school'|school)/i.test(html);
+}
+
+function extractProfileLinks(html, baseUrl) {
+  const urls = new Set();
+  const anchorRegex = /<a\b[^>]*\bhref=(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi;
+  for (const match of html.matchAll(anchorRegex)) {
+    const href = match[1] || match[2] || match[3];
+    if (!href) continue;
+    try {
+      const absolute = new URL(href, baseUrl).href;
+      const userMatch = absolute.match(/\/user\/\d+/);
+      if (userMatch) {
+        const profileUrl = new URL(`${userMatch[0]}/info`, absolute.startsWith('http') ? new URL(absolute).origin : baseUrl).href;
+        urls.add(profileUrl);
+      }
+    } catch (_) {
+      continue;
+    }
+  }
+  return [...urls];
+}
+
+function extractNextAjaxUrl(html, baseUrl) {
+  const match = html.match(/<div\b[^>]*\bajax=(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+  if (!match) return null;
+  try {
+    return new URL(match[1] || match[2] || match[3], baseUrl).href;
+  } catch (_) {
+    return null;
+  }
+}
+
+function extractProfileName(html) {
+  const patterns = [
+    /<h1[^>]*>([^<]+)<\/h1>/i,
+    /<h2[^>]*>([^<]+)<\/h2>/i,
+    /<span[^>]*class=["'][^"']*(?:profile-name|profile-header-name|profile-title)[^"']*["'][^>]*>([^<]+)<\/span>/i,
+    /<div[^>]*class=["'][^"']*(?:profile-name|profile-header-name|profile-title)[^"']*["'][^>]*>([^<]+)<\/div>/i
+  ];
+  for (const regex of patterns) {
+    const match = html.match(regex);
+    if (match && match[1] && match[1].trim()) return match[1].trim();
+  }
+  return null;
+}
+
+function extractProfilePhotoUrl(html) {
+  const imgRegex = /<img\b[^>]*\bsrc=(?:"([^"]*)"|'([^']*)'|([^\s>]+))[^>]*>/gi;
+  for (const match of html.matchAll(imgRegex)) {
+    const src = match[1] || match[2] || match[3];
+    if (!src) continue;
+    const cleaned = src.trim();
+    if (/default|placeholder|blank|avatar|logo/i.test(cleaned)) continue;
+    return cleaned;
+  }
+  return null;
+}
+
+function addCookiesFromResponse(cookieJar, headers) {
+  for (const [key, value] of headers.entries()) {
+    if (key.toLowerCase() !== 'set-cookie') continue;
+    const cookieStrings = Array.isArray(value) ? value : [value];
+    for (const cookieString of cookieStrings) {
+      const pair = cookieString.split(';')[0].trim();
+      const [name, ...valueParts] = pair.split('=');
+      if (!name) continue;
+      cookieJar[name.trim()] = valueParts.join('=').trim();
+    }
+  }
+}
+
+function buildCookieHeader(cookieJar) {
+  return Object.entries(cookieJar).map(([name, value]) => `${name}=${value}`).join('; ');
+}
+
+async function schoologyFetch(url, cookieJar, options = {}) {
+  options.headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    ...options.headers
+  };
+  if (Object.keys(cookieJar).length) {
+    options.headers.Cookie = buildCookieHeader(cookieJar);
+  }
+  options.redirect = 'follow';
+  const response = await fetch(url, options);
+  addCookiesFromResponse(cookieJar, response.headers);
+  return response;
+}
+
+async function schoologySyncWithoutBrowser(username, password, groupId, domain, send) {
+  const BASE_URL = `https://${domain}`;
+  const cookieJar = {};
+
+  send('log', { message: '⚙️ Starting HTTP-based Schoology sync (Render-friendly)...' });
+
+  const loginPage = await schoologyFetch(`${BASE_URL}/login`, cookieJar);
+  let html = await loginPage.text();
+  const hiddenFields = extractHiddenFields(html);
+  const action = extractFormAction(html) || '/login';
+  const loginData = new URLSearchParams({
+    ...hiddenFields,
+    mail: username,
+    pass: password
+  });
+
+  let loginResponse = await schoologyFetch(new URL(action, BASE_URL).href, cookieJar, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: loginData.toString()
+  });
+  html = await loginResponse.text();
+
+  if (hasSchoolField(html) || loginResponse.url.includes('/login')) {
+    send('log', { message: '⚙️ School selection required; submitting school name.' });
+    const hiddenFields2 = extractHiddenFields(html);
+    const action2 = extractFormAction(html) || '/login';
+    const loginData2 = new URLSearchParams({
+      ...hiddenFields2,
+      mail: username,
+      pass: password,
+      school: 'Winton Drive'
+    });
+    loginResponse = await schoologyFetch(new URL(action2, BASE_URL).href, cookieJar, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: loginData2.toString()
+    });
+    html = await loginResponse.text();
+  }
+
+  if (loginResponse.url.includes('/login') || loginResponse.url.includes('/access-denied')) {
+    send('error', { message: '❌ Schoology login failed via HTTP fallback. Check credentials.' });
+    return;
+  }
+
+  send('log', { message: '✅ Logged in successfully via HTTP fallback.' });
+
+  const membersBase = `${BASE_URL}/group/${groupId}/members`;
+  let nextUrl = membersBase;
+  const profileUrls = new Set();
+  let pageCount = 0;
+
+  while (nextUrl) {
+    pageCount += 1;
+    send('log', { message: `📄 Loading members page ${pageCount}: ${nextUrl}` });
+    const pageResponse = await schoologyFetch(nextUrl, cookieJar);
+    html = await pageResponse.text();
+    extractProfileLinks(html, BASE_URL).forEach(url => profileUrls.add(url));
+    const candidate = extractNextAjaxUrl(html, BASE_URL);
+    if (!candidate || candidate === nextUrl) break;
+    nextUrl = candidate;
+    if (profileUrls.size >= 500) {
+      send('log', { message: '⚠️ Safety cap reached at 500 members.' });
+      break;
+    }
+  }
+
+  if (!profileUrls.size) {
+    send('error', { message: '❌ No member profiles found on the group page.' });
+    return;
+  }
+
+  send('log', { message: `👥 Found ${profileUrls.size} profiles. Downloading photos...` });
+  send('total', { count: profileUrls.size });
+
+  if (!fs.existsSync(PHOTO_DIR)) fs.mkdirSync(PHOTO_DIR, { recursive: true });
+
+  const saved = [];
+  const failed = [];
+  let index = 0;
+
+  for (const profileUrl of profileUrls) {
+    index += 1;
+    send('progress', { current: index, total: profileUrls.size, url: profileUrl });
+    try {
+      const profileResp = await schoologyFetch(profileUrl, cookieJar);
+      const profileHtml = await profileResp.text();
+      const fullName = extractProfileName(profileHtml) || `profile-${index}`;
+      let photoUrl = extractProfilePhotoUrl(profileHtml);
+      if (!photoUrl) {
+        failed.push({ url: profileUrl, reason: `No photo found for ${fullName}` });
+        send('log', { message: `  ⚠️ [${index}/${profileUrls.size}] No photo for ${fullName}.` });
+        continue;
+      }
+      photoUrl = new URL(photoUrl, BASE_URL).href;
+      const photoResp = await schoologyFetch(photoUrl, cookieJar, {
+        headers: { Referer: profileUrl }
+      });
+      if (!photoResp.ok) {
+        failed.push({ url: profileUrl, reason: `HTTP ${photoResp.status()} (${fullName})` });
+        send('log', { message: `  ⚠️ [${index}/${profileUrls.size}] Photo fetch failed ${photoResp.status()} for ${fullName}.` });
+        continue;
+      }
+      const buffer = Buffer.from(await photoResp.arrayBuffer());
+      const safeName = fullName.replace(/[/\\:*?"<>|]/g, '').trim() || `profile-${index}`;
+      const outputPath = path.join(PHOTO_DIR, `${safeName}.jpeg`);
+      fs.writeFileSync(outputPath, buffer);
+      saved.push(safeName);
+      send('log', { message: `  ✅ [${index}/${profileUrls.size}] Saved: ${safeName}.jpeg` });
+    } catch (err) {
+      failed.push({ url: profileUrl, reason: err.message });
+      send('log', { message: `  ❌ [${index}/${profileUrls.size}] Error: ${err.message}` });
+    }
+  }
+
+  send('done', { saved: saved.length, failed: failed.length, failedList: failed });
+}
+
 // ---------------------------
 // Schoology Photo Sync (SSE streaming)
 // ---------------------------
@@ -451,6 +704,12 @@ app.post('/api/sync-schoology-photos', async (req, res) => {
   const DOMAIN   = domain   || 'schoology.wintondrivedistrict.org';
   const GROUP_ID = groupId  || '312025711';
   const BASE_URL = `https://${DOMAIN}`;
+
+  if (isRenderEnvironment) {
+    send('log', { message: '⚙️ Render detected; using lightweight HTTP sync fallback.' });
+    await schoologySyncWithoutBrowser(username, password, GROUP_ID, DOMAIN, send);
+    return;
+  }
 
   let browser;
   try {
@@ -486,13 +745,13 @@ app.post('/api/sync-schoology-photos', async (req, res) => {
       timeout: 30000
     };
     try {
-      browser = await chromium.launch(launchOptions);
+      browser = await launchChromiumWithTimeout(chromium, launchOptions);
     } catch (launchError) {
       const launchMessage = String(launchError.message || '');
-      if (launchMessage.includes('Executable doesn\'t exist') || launchMessage.includes('download new browsers') || launchMessage.includes('Playwright was just installed')) {
-        send('log', { message: '⚙️ Chromium not found. Installing browser runtime before retry...' });
-        await ensureChromiumInstalled();
-        browser = await chromium.launch(launchOptions);
+      if (launchMessage.includes('Executable doesn\'t exist') || launchMessage.includes('download new browsers') || launchMessage.includes('Playwright was just installed') || launchMessage.includes('timeout')) {
+        send('log', { message: '⚙️ Chromium launch failed; falling back to HTTP sync.' });
+        await schoologySyncWithoutBrowser(username, password, GROUP_ID, DOMAIN, send);
+        return;
       } else {
         throw launchError;
       }
