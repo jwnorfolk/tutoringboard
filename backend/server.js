@@ -521,10 +521,11 @@ app.post('/api/sync-schoology-photos', async (req, res) => {
         '--mute-audio',
         '--no-first-run',
         '--safebrowsing-disable-auto-update',
-        '--single-process',              // ← helps on low-memory Render instances
+        // NOTE: --single-process is intentionally omitted — it causes Chrome to
+        // deadlock on startup in Linux containers (Render) despite saving memory.
         '--memory-pressure-off',
       ],
-      timeout: 30000
+      timeout: 60000                     // ← 60s to handle Render cold-start lag
     };
 
     browser = await chromium.launch(launchOptions);
