@@ -727,15 +727,15 @@ app.post('/api/sync-schoology-photos', async (req, res) => {
         // We catch timeouts and redirect-interruptions and proceed anyway — the browser
         // usually has enough content loaded to extract the name and photo.
         try {
-          await page.goto(profileUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+          await page.goto(profileUrl, { waitUntil: 'domcontentloaded', timeout: 8000 });
         } catch (navErr) {
           const msg = navErr.message || '';
           if (!msg.includes('interrupted') && !msg.includes('Timeout')) throw navErr;
           // Give the redirected/partial page a moment to settle
-          await page.waitForTimeout(1500);
+          await page.waitForTimeout(600);
         }
         // Brief pause so lazy-loaded profile images have time to appear in the DOM
-        await page.waitForTimeout(500);
+        await page.waitForTimeout(400);
 
         const fullName = await page.evaluate(() => {
           const selectors = ['h1.page-title', 'h2.profile-name', '.profile-header-name', '#profile-header-name', 'h1'];
@@ -802,7 +802,7 @@ app.post('/api/sync-schoology-photos', async (req, res) => {
         failed.push({ url: profileUrl, reason: err.message });
       }
 
-      await page.waitForTimeout(600 + Math.random() * 400);
+      await page.waitForTimeout(200);
     }
 
     await browser.close();
