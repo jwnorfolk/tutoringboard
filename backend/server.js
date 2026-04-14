@@ -29,7 +29,7 @@ function ensureChromiumInstalled() {
 
   console.log('[Chromium] Not found. Installing now (this may take a minute)...');
   try {
-    execSync('npx playwright install chromium --with-deps', {
+    execSync('npx playwright install chromium', {
       stdio: 'inherit',
       timeout: 120_000,
       env: {
@@ -487,7 +487,7 @@ app.post('/api/sync-schoology-photos', async (req, res) => {
       // Try to install on the fly as a last resort
       send('log', { message: '⚙️ Chromium not found — attempting install...' });
       try {
-        execSync('npx playwright install chromium --with-deps', {
+        execSync('npx playwright install chromium', {
           stdio: 'pipe',
           timeout: 120_000,
           env: { ...process.env, PLAYWRIGHT_BROWSERS_PATH }
@@ -742,25 +742,35 @@ app.post('/api/sync-schoology-photos', async (req, res) => {
         const safeName   = fullName.replace(/[/\\:*?"<>|]/g, '').trim();
         const outputPath = path.join(PHOTO_DIR, `${safeName}.jpeg`);
 
-        const photoUrl = await page.evaluate(() => {
+        const photoResult = await page.evaluate(() => {
           const selectors = [
             'img.profile-picture', 'img.user-photo', '.profile-picture img',
-            '.profile-header img', 'img[src*="imagecache/profile"]', 'img[src*="pictures/picture-"]'
+            '.profile-header img', 'img[src*="imagecache/profile"]', 'img[src*="pictures/picture-"]',
+            'img[src*="/pictures/"]', 'img[src*="profile_"]', '.profile-picture-wrapper img',
+            '[class*="profile"] img', '[class*="avatar"] img',
           ];
           for (const sel of selectors) {
             const img = document.querySelector(sel);
-            if (img && img.src && !img.src.includes('default') && !img.src.includes('placeholder')) return img.src;
+            if (img && img.src && !img.src.includes('placeholder')) return { url: img.src, via: sel };
           }
+          // Fallback: any img whose src looks like a user photo
           const allImgs = Array.from(document.querySelectorAll('img'));
-          const pic = allImgs.find(img => img.src.includes('picture-'));
-          return pic ? pic.src : null;
+          const pic = allImgs.find(img =>
+            img.src && (img.src.includes('picture-') || img.src.includes('/pictures/') || img.src.includes('profile'))
+            && !img.src.includes('placeholder')
+          );
+          if (pic) return { url: pic.src, via: 'fallback' };
+          // Debug: return all img srcs so we can see what's on the page
+          return { url: null, debug: allImgs.slice(0, 10).map(img => img.src) };
         });
 
-        if (!photoUrl) {
-          send('log', { message: `  ⚠️  [${i+1}/${allProfileUrls.length}] No photo for ${fullName}.` });
+        if (!photoResult.url) {
+          send('log', { message: `  ⚠️  [${i+1}/${allProfileUrls.length}] No photo for ${fullName}. Page imgs: ${(photoResult.debug || []).join(' | ')}` });
           failed.push({ url: profileUrl, reason: `No photo (${fullName})` });
           continue;
         }
+
+        const photoUrl = photoResult.url;
 
         const response = await context.request.get(photoUrl);
         if (!response.ok()) {
