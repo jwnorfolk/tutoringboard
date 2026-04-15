@@ -772,7 +772,11 @@ app.post('/api/sync-schoology-photos', async (req, res) => {
         }
 
         if (!fullName) {
-          send('log', { message: `  ⚠️  [${i+1}/${allProfileUrls.length}] Could not read name at ${page.url()} — skipping.` });
+          const pageDebug = await page.evaluate(() => ({
+            title: document.title,
+            headings: Array.from(document.querySelectorAll('h1,h2,h3')).slice(0, 5).map(el => `${el.tagName}:"${el.textContent.trim()}"`).join(' | '),
+          })).catch(() => ({ title: '?', headings: '?' }));
+          send('log', { message: `  ⚠️  [${i+1}/${allProfileUrls.length}] Could not read name at ${page.url()} — title:"${pageDebug.title}" headings:${pageDebug.headings}` });
           failed.push({ url: profileUrl, reason: `Name not found at ${page.url()}` });
           continue;
         }
