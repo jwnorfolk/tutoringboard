@@ -738,18 +738,42 @@ app.post('/api/sync-schoology-photos', async (req, res) => {
         // Brief pause so lazy-loaded profile images have time to appear in the DOM
         await page.waitForTimeout(400);
 
-        const fullName = await page.evaluate(() => {
-          const selectors = ['h1.page-title', 'h2.profile-name', '.profile-header-name', '#profile-header-name', 'h1'];
-          for (const sel of selectors) {
-            const el = document.querySelector(sel);
-            if (el && el.textContent.trim()) return el.textContent.trim();
+        // If the page redirected away from the profile (e.g. to home/login), skip it
+        const landedUrl = page.url();
+        if (!landedUrl.includes('/user/')) {
+          send('log', { message: `  ⚠️  [${i+1}/${allProfileUrls.length}] Redirected away from profile → ${landedUrl} — skipping.` });
+          failed.push({ url: profileUrl, reason: `Redirected to ${landedUrl}` });
+          continue;
+        }
+
+        // Wrap evaluate in a retry in case the execution context is briefly mid-navigation
+        let fullName = null;
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            fullName = await page.evaluate(() => {
+              const selectors = ['h1.page-title', 'h2.profile-name', '.profile-header-name',
+                '#profile-header-name', '.profile-info-title', '[class*="profile"] h1',
+                '[class*="profile"] h2', 'h1', 'h2'];
+              for (const sel of selectors) {
+                const el = document.querySelector(sel);
+                if (el && el.textContent.trim()) return el.textContent.trim();
+              }
+              return null;
+            });
+            break;
+          } catch (evalErr) {
+            if (attempt === 0 && evalErr.message.includes('context')) {
+              await page.waitForLoadState('domcontentloaded', { timeout: 5000 }).catch(() => {});
+              await page.waitForTimeout(500);
+            } else {
+              throw evalErr;
+            }
           }
-          return null;
-        });
+        }
 
         if (!fullName) {
-          send('log', { message: `  ⚠️  [${i+1}/${allProfileUrls.length}] Could not read name — skipping.` });
-          failed.push({ url: profileUrl, reason: 'Name not found' });
+          send('log', { message: `  ⚠️  [${i+1}/${allProfileUrls.length}] Could not read name at ${page.url()} — skipping.` });
+          failed.push({ url: profileUrl, reason: `Name not found at ${page.url()}` });
           continue;
         }
 
