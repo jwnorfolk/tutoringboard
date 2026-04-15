@@ -525,7 +525,7 @@ app.post('/api/sync-schoology-photos', async (req, res) => {
         // deadlock on startup in Linux containers (Render) despite saving memory.
         '--memory-pressure-off',
       ],
-      timeout: 60000                     // ← 60s to handle Render cold-start lag
+      timeout: 120000                    // ← 120s to handle Render cold-start lag
     };
 
     browser = await chromium.launch(launchOptions);
