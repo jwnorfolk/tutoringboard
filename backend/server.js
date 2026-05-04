@@ -49,9 +49,50 @@ ensureChromiumInstalled();
 
 const AdminPassword = process.env.ADMIN_PASSWORD;
 
-const XLSX_PATH = path.join(__dirname, '..', 'FUTURE_USERS_LOOK_HERE', 'tutors.xlsx');
-const PHOTO_DIR = path.join(__dirname, '..', 'frontend', 'photos');
+const DATA_DIR = process.env.DATA_DIR;
+
+const LOCAL_DATA_DIR = path.join(__dirname, '..', 'data');
+
+const XLSX_PATH = DATA_DIR
+  ? path.join(DATA_DIR, 'tutors.xlsx')
+  : path.join(LOCAL_DATA_DIR, 'tutors.xlsx');
+
+const PHOTO_DIR = DATA_DIR
+  ? path.join(DATA_DIR, 'photos')
+  : path.join(LOCAL_DATA_DIR, 'photos');
+
 const PASSWORD_FILE = path.join(__dirname, '..', 'FUTURE_USERS_LOOK_HERE', 'adminpassword.txt');
+
+// On first deploy, seed the persistent disk with bundled data (one-time copy)
+function initDataDir() {
+  if (!DATA_DIR) return;
+  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+  if (!fs.existsSync(PHOTO_DIR)) fs.mkdirSync(PHOTO_DIR, { recursive: true });
+
+  const seedXlsx = path.join(LOCAL_DATA_DIR, 'tutors.xlsx');
+  if (!fs.existsSync(XLSX_PATH) && fs.existsSync(seedXlsx)) {
+    fs.copyFileSync(seedXlsx, XLSX_PATH);
+    console.log('[DataDir] Seeded tutors.xlsx to', XLSX_PATH);
+  }
+
+  // Seed bundled photos that don't yet exist on the persistent disk
+  const seedPhotos = path.join(LOCAL_DATA_DIR, 'photos');
+  if (fs.existsSync(seedPhotos)) {
+    let seeded = 0;
+    for (const file of fs.readdirSync(seedPhotos)) {
+      const dest = path.join(PHOTO_DIR, file);
+      if (!fs.existsSync(dest)) {
+        fs.copyFileSync(path.join(seedPhotos, file), dest);
+        seeded++;
+      }
+    }
+    if (seeded > 0) console.log(`[DataDir] Seeded ${seeded} photo(s) to`, PHOTO_DIR);
+  }
+
+  console.log('[DataDir] Using persistent storage at', DATA_DIR);
+}
+
+initDataDir();
 
 const upload = multer({ storage: multer.memoryStorage() });
 
