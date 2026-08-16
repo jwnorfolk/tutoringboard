@@ -156,8 +156,10 @@ function loadTutors() {
       const subjects = row.slice(5, 12).filter(Boolean).map(s => String(s).trim());
       const available = row[12] === true || row[12] === 'true' || row[12] === '1';
       const photoFilename = normalizePhotoFilename(row[13], name);
+      const schoolEmail = row[14] ? String(row[14]).trim() : '';
+      const subjectSummary = row[15] ? String(row[15]).trim() : (subjects.length ? subjects.join(', ') : '');
       const photo = photoFilename || (name ? `${name}.jpeg` : '');
-      tutors.push({ name, id, photoFilename, photo, grade, subjects, available });
+      tutors.push({ name, id, photoFilename, photo, grade, subjects, available, schoolEmail, subjectSummary });
     });
     tutorsCache = tutors;
     tutorsCacheMtime = mtime;
@@ -175,6 +177,10 @@ function saveTutors(tutors) {
     const originalRows = XLSX.utils.sheet_to_json(sheet, {header:1});
     const header = originalRows[0] || [];
     if (header.length < 14) header[13] = header[13] || 'Photo Filename';
+    if (header.length < 16) {
+      header[14] = header[14] || 'School Email';
+      header[15] = header[15] || 'Subjects Summary';
+    }
     const newRows = [header];
     tutors.forEach((tutor, idx) => {
       const orig = originalRows[idx+1] || [];
@@ -189,6 +195,8 @@ function saveTutors(tutors) {
       }
       row[12] = tutor.available ? 'true' : 'false';
       row[13] = normalizePhotoFilename(tutor.photoFilename, tutor.name);
+      row[14] = tutor.schoolEmail || '';
+      row[15] = tutor.subjectSummary || (Array.isArray(tutor.subjects) ? tutor.subjects.join(', ') : '');
       newRows.push(row);
     });
     const worksheet = XLSX.utils.aoa_to_sheet(newRows);
@@ -276,6 +284,61 @@ app.get('/api/instructions', (req, res) => {
 app.get('/api/tutors', (req, res) => {
   const tutors = loadTutors();
   res.json(tutors);
+});
+
+app.post('/api/check-student-id', (req, res) => {
+  const { id } = req.body;
+  const studentId = String(id || '').trim();
+  if (!studentId) return res.status(400).json({ available: false, message: 'Student ID is required.' });
+  const tutors = loadTutors();
+  const exists = tutors.some(t => t.id === studentId);
+  return res.json({ available: !exists, exists, message: exists ? 'That student ID is already in use.' : 'Student ID is available.' });
+});
+
+app.post('/api/create-tutor-account', (req, res) => {
+  const { schoolEmail, studentId, fullName, grade, subjectsText } = req.body;
+  const email = String(schoolEmail || '').trim();
+  const id = String(studentId || '').trim();
+  const name = String(fullName || '').trim();
+  const gradeValue = String(grade || '').trim();
+  const subjectText = String(subjectsText || '').trim();
+
+  if (!email || !id || !name || !gradeValue || !subjectText) {
+    return res.status(400).json({ message: 'Please complete all required fields.' });
+  }
+
+  if (!/^(9|10|11|12)$/.test(gradeValue)) {
+    return res.status(400).json({ message: 'Grade must be between 9 and 12.' });
+  }
+
+  const tutors = loadTutors();
+  if (tutors.some(t => t.id === id)) {
+    return res.status(409).json({ message: 'That student ID is already in use. Please contact an admin or sign in with your existing account.' });
+  }
+
+  const subjects = subjectText
+    .split(/[\n,]+/)
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  if (!subjects.length) {
+    return res.status(400).json({ message: 'Please list at least one class or subject you can teach.' });
+  }
+
+  const newTutor = {
+    name,
+    id,
+    grade: gradeValue,
+    schoolEmail: email,
+    subjects,
+    subjectSummary: subjects.join(', '),
+    photoFilename: normalizePhotoFilename('', name),
+    available: false
+  };
+
+  tutors.push(newTutor);
+  saveTutors(tutors);
+  return res.status(201).json({ message: 'Tutor account created successfully.', tutor: newTutor });
 });
 
 app.post('/api/login', (req, res) => {

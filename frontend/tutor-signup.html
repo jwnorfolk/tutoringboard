@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Tutor Account</title>
+  <style>
+    :root {
+      --bg: #eef5ef;
+      --panel: #ffffff;
+      --green: #1b4332;
+      --green-dark: #123f2a;
+      --green-soft: #e8f5e9;
+      --text: #2c3e50;
+      --muted: #5d6d7e;
+      --warning: #fff3cd;
+      --warning-border: #ffecb5;
+      --danger: #d32f2f;
+      --danger-dark: #b71c1c;
+      --shadow: 0 10px 25px rgba(15, 62, 31, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Inter", "Segoe UI", sans-serif;
+      background: linear-gradient(135deg, #f0f4f8, #e9f5ec);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .page {
+      width: min(100%, 720px);
+      background: var(--panel);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(90deg, #0f3e1f, #1a5c31);
+      color: white;
+      padding: 1.2rem 1.5rem;
+      font-size: clamp(1.5rem, 2vw, 2rem);
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .content {
+      padding: 2rem 1.5rem 2.5rem;
+    }
+
+    .subtitle {
+      margin: 0 0 1.5rem;
+      color: var(--muted);
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    form {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    label {
+      display: grid;
+      gap: 0.4rem;
+      font-weight: 600;
+      color: var(--green);
+    }
+
+    input, select, textarea, button {
+      font: inherit;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 0.8rem 0.9rem;
+      border: 1px solid #cfd8dc;
+      border-radius: 10px;
+      background: #fafdfb;
+      color: var(--text);
+      resize: vertical;
+    }
+
+    textarea {
+      min-height: 120px;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(27, 67, 50, 0.1);
+    }
+
+    .field-note {
+      margin: 0;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .warning {
+      background: var(--warning);
+      border: 1px solid var(--warning-border);
+      color: #6b5222;
+      border-radius: 10px;
+      padding: 0.8rem 1rem;
+      line-height: 1.45;
+      font-size: 0.95rem;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-top: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 10px;
+      padding: 0.8rem 1.2rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    .btn:hover { transform: translateY(-2px); }
+    .btn:disabled { opacity: 0.7; cursor: not-allowed; }
+
+    .btn-primary {
+      background: linear-gradient(145deg, #1e88e5, #1565c0);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: var(--green);
+      color: white;
+    }
+
+    .message {
+      min-height: 1.25rem;
+      font-size: 0.95rem;
+      margin-top: 0.35rem;
+      font-weight: 600;
+    }
+
+    .message.error { color: var(--danger); }
+    .message.success { color: #0f7a0b; }
+
+    @media (max-width: 640px) {
+      .row { grid-template-columns: 1fr; }
+      .actions { flex-direction: column-reverse; }
+      .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">Tutor Account Creation</div>
+    <div class="content">
+      <p class="subtitle">Create your tutor account to appear on the live tutoring board. Your student ID must be unique.</p>
+
+      <form id="tutorSignupForm">
+        <div class="row">
+          <label>
+            School Email
+            <input id="schoolEmail" type="email" name="schoolEmail" placeholder="name@school.edu" required />
+          </label>
+          <label>
+            Student ID
+            <input id="studentId" name="studentId" placeholder="Student ID" required />
+          </label>
+        </div>
+
+        <div class="row">
+          <label>
+            Full Name
+            <input id="fullName" name="fullName" placeholder="Full Name" required />
+          </label>
+          <label>
+            Grade
+            <select id="grade" name="grade" required>
+              <option value="">Select grade</option>
+              <option value="9">9</option>
+              <option value="10">10</option>
+              <option value="11">11</option>
+              <option value="12">12</option>
+            </select>
+          </label>
+        </div>
+
+        <label>
+          Classes / Subjects You Can Teach
+          <textarea id="subjectsText" name="subjectsText" placeholder="Example: Algebra II, AP Biology, US History, English 11" required></textarea>
+        </label>
+
+        <p class="field-note">List the classes or subjects you can help with, separated by commas or new lines.</p>
+
+        <div class="warning">
+          We will only accept a new account if the student ID has not already been used.
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn btn-secondary" id="backToLoginBtn">Back to Login</button>
+          <button type="submit" class="btn btn-primary" id="submitTutorSignup">Create Account</button>
+        </div>
+
+        <div id="signupMessage" class="message" aria-live="polite"></div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('tutorSignupForm');
+    const signupMessage = document.getElementById('signupMessage');
+    const studentIdInput = document.getElementById('studentId');
+    const submitBtn = document.getElementById('submitTutorSignup');
+
+    function setMessage(text, type = '') {
+      signupMessage.textContent = text;
+      signupMessage.className = `message ${type}`.trim();
+    }
+
+    async function validateStudentId() {
+      const id = studentIdInput.value.trim();
+      if (!id) {
+        setMessage('Enter a student ID before creating the account.', 'error');
+        return false;
+      }
+
+      try {
+        const res = await fetch('/api/check-student-id', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        const data = await res.json();
+
+        if (!res.ok || !data.available) {
+          setMessage(data.message || 'That student ID is already in use.', 'error');
+          return false;
+        }
+
+        setMessage('Student ID is available.', 'success');
+        return true;
+      } catch (err) {
+        setMessage('Unable to validate student ID right now. Please try again.', 'error');
+        return false;
+      }
+    }
+
+    studentIdInput.addEventListener('blur', async () => {
+      if (!studentIdInput.value.trim()) return;
+      await validateStudentId();
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const schoolEmail = document.getElementById('schoolEmail').value.trim();
+      const studentId = studentIdInput.value.trim();
+      const fullName = document.getElementById('fullName').value.trim();
+      const grade = document.getElementById('grade').value;
+      const subjectsText = document.getElementById('subjectsText').value.trim();
+
+      if (!schoolEmail || !studentId || !fullName || !grade || !subjectsText) {
+        setMessage('Please complete all required fields.', 'error');
+        return;
+      }
+
+      if (!/^(9|10|11|12)$/.test(grade)) {
+        setMessage('Grade must be between 9 and 12.', 'error');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      setMessage('Checking your student ID...', '');
+
+      const valid = await validateStudentId();
+      if (!valid) {
+        submitBtn.disabled = false;
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/create-tutor-account', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ schoolEmail, studentId, fullName, grade, subjectsText })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          setMessage(data.message || 'Unable to create account.', 'error');
+          submitBtn.disabled = false;
+          return;
+        }
+
+        setMessage('Tutor account created successfully! Redirecting to login...', 'success');
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 1200);
+      } catch (err) {
+        setMessage('Unexpected error while creating account. Please try again.', 'error');
+        submitBtn.disabled = false;
+      }
+    });
+
+    document.getElementById('backToLoginBtn').addEventListener('click', (event) => {
+      event.preventDefault();
+      window.location.assign('/');
+    });
+  </script>
+</body>
+</html>

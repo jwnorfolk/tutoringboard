@@ -118,6 +118,8 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
 #tutorLoginModal input:focus { border-color: #1b4332; box-shadow: 0 0 5px rgba(27,67,50,0.4); outline: none; }
 #tutorLoginModal form button[type="submit"] { padding: 0.55rem 1.2rem; font-size: 1rem; font-weight: 600; color: white; border: none; border-radius: 8px; cursor: pointer; background: linear-gradient(145deg, #1e88e5, #1565c0); box-shadow: 0 4px 6px rgba(0,0,0,0.15); transition: transform 0.15s ease, box-shadow 0.15s ease; }
 #tutorLoginModal form button[type="submit"]:hover { transform: translateY(-2px); }
+#tutorLoginModal .secondary-button { background: #1b4332; color: white; border: none; border-radius: 8px; padding: 0.55rem 1.2rem; font-size: 1rem; font-weight: 600; cursor: pointer; }
+#tutorLoginModal .secondary-button:hover { background: #123f2a; transform: translateY(-2px); }
 #tutorLoginModal #logoutButton { display: none; margin-top: 1rem; padding: 0.55rem 1.2rem; font-weight: 600; border-radius: 8px; border: none; cursor: pointer; color: white; background: #f44336; }
 #tutorLoginModal #logoutButton:hover { background: #b71c1c; }
 #tutorLoginModal .close { position: absolute; top: 12px; right: 15px; width: 32px; height: 32px; border-radius: 50%; background: #f44336; color: white; border: none; font-size: 1.5rem; line-height: 32px; text-align: center; cursor: pointer; }
@@ -303,7 +305,10 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
     <h3>Enter Student ID</h3>
     <form id="loginForm">
       <input id="studentId" placeholder="Student ID" required />
-      <button type="submit">Log In</button>
+      <div style="display:flex; gap:0.75rem; justify-content:center; flex-wrap:wrap;">
+        <button type="submit">Log In</button>
+        <button type="button" id="createTutorAccountBtn" class="secondary-button">Create Tutor Account</button>
+      </div>
     </form>
     <button id="logoutButton">Log Out</button>
   </div>
@@ -500,6 +505,11 @@ button.close:hover { color: #c62828; transform: scale(1.1); }
   });
 
   function closePasswordModal() { document.getElementById('passwordModal').style.display = 'none'; }
+
+  document.getElementById('createTutorAccountBtn').addEventListener('click', () => {
+    closeTutorLoginModal();
+    window.location.href = '/tutor-signup.html';
+  });
 
   document.getElementById('adminPasswordForm').addEventListener('submit', async (e) => {
     e.preventDefault();
