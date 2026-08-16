@@ -111,13 +111,24 @@
     }
 
     .warning {
-      background: var(--warning);
-      border: 1px solid var(--warning-border);
-      color: #6b5222;
-      border-radius: 10px;
-      padding: 0.8rem 1rem;
-      line-height: 1.45;
-      font-size: 0.95rem;
+      background: linear-gradient(135deg, #fff8e1, #ffe7a4);
+      border: 2px solid #f4b000;
+      color: #6a4700;
+      border-radius: 12px;
+      padding: 1rem 1.1rem;
+      line-height: 1.5;
+      font-size: 0.98rem;
+      font-weight: 700;
+      box-shadow: 0 0 0 3px rgba(244, 176, 0, 0.12);
+      position: relative;
+    }
+
+    .warning::before {
+      content: "⚠";
+      display: inline-block;
+      margin-right: 0.55rem;
+      font-size: 1.2rem;
+      vertical-align: middle;
     }
 
     .actions {
@@ -210,7 +221,8 @@
         <p class="field-note">List the classes or subjects you can help with, separated by commas or new lines.</p>
 
         <div class="warning">
-          We will only accept a new account if the student ID has not already been used.
+          We will only accept a new account if the student ID has not already been used.<br>
+          Please type your full name exactly as it appears in Schoology so it matches your profile correctly.
         </div>
 
         <div class="actions">
